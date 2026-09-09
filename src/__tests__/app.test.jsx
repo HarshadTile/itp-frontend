@@ -49,18 +49,18 @@ describe('Login flows', () => {
   it('rejects bad internal credentials and shows an error', async () => {
     const user = userEvent.setup();
     renderApp(freshStore());
-    await user.type(screen.getByPlaceholderText('Enter username'), 'wrong');
-    await user.type(screen.getByPlaceholderText('Enter password'), 'wrong');
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
-    expect(await screen.findByText(/Invalid username or password/)).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'wrong');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'wrong');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    expect(await screen.findByText(/Invalid EAML . Employee ID or password/)).toBeInTheDocument();
   });
 
   it('logs in as internal Admin (All Channels) and lands on Invoice Tracking', async () => {
     const user = userEvent.setup();
     renderApp(freshStore());
-    await user.type(screen.getByPlaceholderText('Enter username'), 'admin');
-    await user.type(screen.getByPlaceholderText('Enter password'), 'admin123');
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByRole('heading', { name: 'Invoice Tracking' })).toBeInTheDocument();
     expect(screen.getAllByText('INV-MS-1001').length).toBeGreaterThan(0);
   });
@@ -69,9 +69,9 @@ describe('Login flows', () => {
     const user = userEvent.setup();
     renderApp(freshStore());
     await user.selectOptions(screen.getByRole('combobox'), 'internalTeam');
-    await user.type(screen.getByPlaceholderText('Enter username'), 'admin');
-    await user.type(screen.getByPlaceholderText('Enter password'), 'admin123');
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByRole('heading', { name: /Internal Team Invoice Tracking/ })).toBeInTheDocument();
     expect(screen.queryByText('Vendor Status Reports')).not.toBeInTheDocument();
     expect(screen.queryByText('Supplier Visibility')).not.toBeInTheDocument();
@@ -82,7 +82,9 @@ describe('Login flows', () => {
     const user = userEvent.setup();
     renderApp(freshStore());
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByText('Vendor Code Login')).toBeInTheDocument();
     expect(screen.getByText('DIT00388AC')).toBeInTheDocument();
   });
@@ -93,9 +95,9 @@ describe('Internal admin - full navigation', () => {
     const store = freshStore();
     const user = userEvent.setup();
     renderApp(store);
-    await user.type(screen.getByPlaceholderText('Enter username'), 'admin');
-    await user.type(screen.getByPlaceholderText('Enter password'), 'admin123');
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     await screen.findByRole('heading', { name: 'Invoice Tracking' });
     return { store, user };
   }
@@ -288,7 +290,9 @@ describe('Supplier session', () => {
     const user = userEvent.setup();
     renderApp(store);
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     await screen.findByText('Vendor Code Login');
     return { store, user };
   }
@@ -338,7 +342,9 @@ describe('Supplier session', () => {
       </Provider>,
     );
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
     await screen.findByText('Vendor Code Login');
     // supplier is logged in; app-level guard should keep them off /app/* even if navigated there
     expect(screen.queryByText('Vendor Status Reports')).not.toBeInTheDocument();
