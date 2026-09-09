@@ -1,16 +1,20 @@
 /* Thin fetch wrapper for the I2P API.
  *
  * - prefixes every path with /api (Vite proxies that to the Express server)
- * - attaches the bearer token kept in localStorage
+ * - attaches the bearer token (from localStorage if "remember me" was checked,
+ *   otherwise sessionStorage)
  * - throws an Error carrying the server's message + status on non-2xx */
 const TOKEN_KEY = 'i2p_token';
 
-let token = null;
-try {
-  token = localStorage.getItem(TOKEN_KEY);
-} catch {
-  /* private mode / storage disabled — run tokenless */
+function readStored(store) {
+  try {
+    return store.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
 }
+
+let token = readStored(localStorage) || readStored(sessionStorage);
 
 async function req(method, path, body) {
   const res = await fetch(`/api${path}`, {
@@ -39,26 +43,26 @@ async function req(method, path, body) {
   return res.json();
 }
 
+function writeToken(value, persist) {
+  const primary = persist ? localStorage : sessionStorage;
+  const other = persist ? sessionStorage : localStorage;
+  try { primary.setItem(TOKEN_KEY, value); } catch { /* ignore */ }
+  try { other.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+}
+
 export const api = {
   get: (path) => req('GET', path),
   post: (path, body) => req('POST', path, body),
   patch: (path, body) => req('PATCH', path, body),
   put: (path, body) => req('PUT', path, body),
-  setToken(value) {
+  setToken(value, { persist = true } = {}) {
     token = value;
-    try {
-      localStorage.setItem(TOKEN_KEY, value);
-    } catch {
-      /* ignore */
-    }
+    writeToken(value, persist);
   },
   clearToken() {
     token = null;
-    try {
-      localStorage.removeItem(TOKEN_KEY);
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
   },
   hasToken: () => !!token,
 };

@@ -15,10 +15,11 @@ export const loadBootstrap = () => async (dispatch) => {
   return b;
 };
 
-/** Sign in, store the token, hydrate. Throws on bad credentials. */
-export const loginThunk = (form) => async (dispatch) => {
+/** Sign in, store the token, hydrate. Throws on bad credentials.
+ *  `opts.remember === false` keeps the session in sessionStorage only. */
+export const loginThunk = (form, opts = {}) => async (dispatch) => {
   const { token, auth } = await api.post('/login', form);
-  api.setToken(token);
+  api.setToken(token, { persist: opts.remember !== false });
   dispatch(setAuthFromServer(auth));
   await dispatch(loadBootstrap());
 };
