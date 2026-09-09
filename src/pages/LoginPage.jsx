@@ -201,8 +201,7 @@ export default function LoginPage() {
               </button>
 
               <p className="lgn-hint">
-                Demo access — username <b>admin</b>, password <b>admin123</b>.
-                A team scoped to one portal only sees that portal's data.
+                Demo access — <b>admin</b> / <b>admin123</b>
               </p>
             </form>
           ) : (
@@ -258,8 +257,7 @@ export default function LoginPage() {
               </button>
 
               <p className="lgn-hint">
-                Pick your company/PAN, then the one vendor code you sign in as.
-                Your view only ever shows that code's own purchase orders.
+                Your view is scoped to the selected vendor code only.
               </p>
             </form>
           )}
