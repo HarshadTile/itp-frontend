@@ -1,0 +1,102 @@
+CREATE DATABASE IF NOT EXISTS mahindra_i2p CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE mahindra_i2p;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(64) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  email VARCHAR(191) NOT NULL,
+  role VARCHAR(64) NOT NULL,
+  dept VARCHAR(64) NOT NULL DEFAULT '',
+  title VARCHAR(128) NOT NULL DEFAULT '',
+  status VARCHAR(32) NOT NULL DEFAULT 'Active'
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token CHAR(36) PRIMARY KEY,
+  user_id INT NULL,
+  auth_type ENUM('internal','supplier') NOT NULL,
+  scope_json JSON NULL,
+  supplier_json JSON NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS invoices (
+  no VARCHAR(32) PRIMARY KEY,
+  vcode VARCHAR(32) NOT NULL,
+  vendor VARCHAR(128) NOT NULL,
+  channel VARCHAR(32) NOT NULL,
+  po VARCHAR(64) NOT NULL,
+  amount VARCHAR(32) NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  utr VARCHAR(32) NOT NULL DEFAULT '-',
+  date VARCHAR(32) NOT NULL,
+  short_pay_reason TEXT NULL,
+  stage_index INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS tickets (
+  id VARCHAR(16) PRIMARY KEY,
+  no VARCHAR(32) NOT NULL,
+  category VARCHAR(64) NOT NULL,
+  description TEXT NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  priority VARCHAR(16) NOT NULL,
+  assignee VARCHAR(64) NOT NULL,
+  raised_by VARCHAR(32) NOT NULL,
+  raised_date VARCHAR(32) NOT NULL,
+  sla_hours INT NOT NULL DEFAULT 24,
+  resolved_date VARCHAR(32) NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ticket_comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ticket_id VARCHAR(16) NOT NULL,
+  author VARCHAR(64) NOT NULL,
+  role VARCHAR(64) NOT NULL DEFAULT '',
+  date VARCHAR(32) NOT NULL,
+  text TEXT NOT NULL,
+  seq INT NOT NULL,
+  CONSTRAINT fk_comments_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ticket_activity (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ticket_id VARCHAR(16) NOT NULL,
+  date VARCHAR(32) NOT NULL,
+  text TEXT NOT NULL,
+  seq INT NOT NULL,
+  CONSTRAINT fk_activity_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS table_rows (
+  table_key VARCHAR(64) NOT NULL,
+  row_index INT NOT NULL,
+  cells_json JSON NOT NULL,
+  PRIMARY KEY (table_key, row_index)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS settings (
+  id TINYINT PRIMARY KEY,
+  role_matrix_json JSON NOT NULL,
+  two_factor TINYINT NOT NULL DEFAULT 0,
+  sender_email VARCHAR(191) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sync_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  channel VARCHAR(64) NOT NULL,
+  time VARCHAR(48) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  records INT NOT NULL DEFAULT 0,
+  msg TEXT NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS integrations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(96) NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  last_sync VARCHAR(48) NOT NULL
+) ENGINE=InnoDB;
