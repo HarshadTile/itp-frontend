@@ -118,12 +118,17 @@ export const submitTicket = (payload) => async (dispatch) => {
   return ticket;
 };
 
+// Only overwrite the optimistic copy when the server actually returned a ticket.
+function reconcile(dispatch, updated) {
+  if (updated && updated.id) dispatch(replaceTicket(updated));
+}
+
 export const postComment = (payload) => async (dispatch) => {
   dispatch(postCommentLocal(payload));
   const updated = await api.post(`/tickets/${payload.id}/comments`, {
     author: payload.author, role: payload.role, text: payload.text, date: today(),
   });
-  dispatch(replaceTicket(updated));
+  reconcile(dispatch, updated);
   return updated;
 };
 
@@ -134,7 +139,7 @@ function statusThunk(localAction, boardMove) {
     const body = { status, activity: [{ date: today(), text: `Status changed to ${status}${suffix}.` }] };
     if (status === 'Resolved') body.resolvedDate = today();
     const updated = await api.patch(`/tickets/${id}`, body);
-    dispatch(replaceTicket(updated));
+    reconcile(dispatch, updated);
     return updated;
   };
 }
@@ -149,7 +154,7 @@ export const setPriority = ({ id, priority }) => async (dispatch, getState) => {
     priority,
     activity: [{ date: today(), text: `Priority changed from ${old} to ${priority}.` }],
   });
-  dispatch(replaceTicket(updated));
+  reconcile(dispatch, updated);
   return updated;
 };
 
@@ -160,7 +165,7 @@ export const setAssignee = ({ id, assignee }) => async (dispatch, getState) => {
     assignee,
     activity: [{ date: today(), text: `Reassigned from ${old} to ${assignee}.` }],
   });
-  dispatch(replaceTicket(updated));
+  reconcile(dispatch, updated);
   return updated;
 };
 

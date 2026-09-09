@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
+
+// The API is mocked in-memory; the suite exercises the real login → hydrate →
+// mutate flows without a running server. See src/test/apiMock.js.
+vi.mock('../api/client', async () => {
+  const { installApiMock } = await import('../test/apiMock.js');
+  return { api: installApiMock() };
+});
+
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
