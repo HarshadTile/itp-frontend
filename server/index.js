@@ -2,6 +2,11 @@ import { pathToFileURL } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import bootstrapRoutes from './routes/bootstrap.js';
+import invoiceRoutes from './routes/invoices.js';
+import ticketRoutes from './routes/tickets.js';
+import tableRoutes from './routes/tables.js';
+import settingsRoutes from './routes/settings.js';
 
 export function createApp() {
   const app = express();
@@ -10,6 +15,11 @@ export function createApp() {
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api', authRoutes);
+  app.use('/api', bootstrapRoutes);
+  app.use('/api', invoiceRoutes);
+  app.use('/api', ticketRoutes);
+  app.use('/api', tableRoutes);
+  app.use('/api', settingsRoutes);
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
