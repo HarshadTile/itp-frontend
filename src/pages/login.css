@@ -149,13 +149,12 @@
 
 /* ---------------- Login card ---------------- */
 .lgn-card {
-  width: 100%;
-  max-width: 428px;
+  width: min(100%, 440px);
   background: #fff;
   border: 1px solid rgba(23, 24, 26, .06);
   border-radius: 14px;
   box-shadow: 0 24px 60px rgba(60, 4, 14, .26);
-  padding: 22px 24px;
+  padding: 26px 28px;
   animation: lgn-card-in .28s ease both;
 }
 @keyframes lgn-card-in {
@@ -163,25 +162,25 @@
   to   { opacity: 1; transform: none; }
 }
 
-.lgn-card-head { margin-bottom: 12px; }
+.lgn-card-head { margin-bottom: 14px; }
 .lgn-kicker {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--brand);
-  margin: 0 0 5px;
+  margin: 0 0 6px;
 }
 .lgn-card-head h2 {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -.005em;
   color: #1B2333;
-  margin: 0 0 3px;
-  line-height: 1.25;
+  margin: 0 0 4px;
+  line-height: 1.3;
 }
-.lgn-card-sub { font-size: 12px; color: #5A6270; margin: 0; }
+.lgn-card-sub { font-size: 12.5px; color: #5A6270; margin: 0; }
 
 /* segmented control */
 .lgn-seg {
@@ -191,13 +190,13 @@
   padding: 4px;
   background: #EEEFF3;
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .lgn-seg button {
   appearance: none;
   border: none;
   background: transparent;
-  padding: 9px 8px;
+  padding: 11px 8px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: .01em;
@@ -215,8 +214,8 @@
 }
 
 /* fields */
-.lgn-form { display: flex; flex-direction: column; gap: 10px; }
-.lgn-field { display: flex; flex-direction: column; gap: 5px; }
+.lgn-form { display: flex; flex-direction: column; gap: 12px; }
+.lgn-field { display: flex; flex-direction: column; gap: 6px; }
 .lgn-field label { font-size: 12.5px; font-weight: 600; color: #333A47; line-height: 1.2; }
 .lgn-label-row {
   display: flex;
@@ -246,7 +245,7 @@
 .lgn-input input,
 .lgn-input select {
   width: 100%;
-  height: 44px;
+  height: 46px;
   padding: 0 14px 0 40px;
   font-size: 14px;
   font-family: inherit;
@@ -365,7 +364,7 @@
 /* submit */
 .lgn-submit {
   height: 46px;
-  margin-top: 3px;
+  margin-top: 4px;
   border: none;
   border-radius: 8px;
   background: var(--brand);
@@ -429,6 +428,39 @@
   .lgn-hero-visual { max-width: 380px; }
 }
 
+/* SHORT desktop viewports — 1366x768, and 1080p at 125-150% Windows scale
+   (1080/1.5 = 720 CSS px, minus browser chrome ≈ 600 visible). Compact the
+   whole card so the full experience fits with no page scroll. */
+@media (min-width: 1025px) and (max-height: 820px) {
+  .lgn-hdr { height: 56px; }
+  .lgn-hero-right { padding: 12px clamp(20px, 3vw, 44px); }
+  .lgn-card { padding: 18px 24px; width: min(100%, 420px); }
+  .lgn-card-head { margin-bottom: 10px; }
+  .lgn-kicker { margin-bottom: 4px; font-size: 10.5px; }
+  .lgn-card-head h2 { font-size: 16px; line-height: 1.25; }
+  .lgn-card-sub { font-size: 11.5px; }
+  .lgn-seg { margin-bottom: 10px; }
+  .lgn-seg button { padding: 8px; }
+  .lgn-form { gap: 9px; }
+  .lgn-field { gap: 5px; }
+  .lgn-input input, .lgn-input select { height: 42px; }
+  .lgn-submit { height: 44px; margin-top: 2px; }
+  .lgn-remember { margin-top: 2px; }
+  .lgn-alert { margin-bottom: 10px; }
+  .lgn-legal { margin-top: 10px; padding-top: 8px; }
+  .lgn-hero-left { padding: clamp(24px, 3vw, 48px); }
+  .lgn-eyebrow { margin-bottom: 10px; }
+  .lgn-hero-title { font-size: clamp(20px, 2.3vw, 28px); margin-bottom: 10px; }
+  .lgn-hero-text { font-size: 13.5px; }
+  .lgn-hero-visual { width: min(100%, 340px); max-height: 24vh; margin-top: 12px; }
+}
+
+/* very short desktop windows — let the document scroll rather than clip */
+@media (min-width: 1025px) and (max-height: 560px) {
+  .lgn-page { min-height: 0; }
+  .lgn-hero-right { align-items: flex-start; }
+}
+
 /* stack below ~1024 — no side-by-side compression; document scrolls naturally */
 @media (max-width: 1024px) {
   .lgn-hero {
@@ -448,13 +480,25 @@
     padding: 24px 20px 32px;
     align-items: flex-start;
   }
-  .lgn-card { max-width: 460px; margin: 0 auto; }
+  .lgn-card { width: min(100%, 460px); margin: 0 auto; }
 }
 
-@media (max-width: 420px) {
-  .lgn-hdr-brand span { font-size: 11px; }
-  .lgn-hero-right { padding: 18px 16px 28px; }
-  .lgn-card { padding: 24px 20px; box-shadow: 0 10px 30px rgba(23, 24, 26, .1); }
+/* phones / small tablets */
+@media (max-width: 560px) {
+  .lgn-hdr { height: 56px; gap: 8px; }
+  .lgn-hdr-brand span { font-size: 11px; letter-spacing: .04em; }
+  .lgn-hdr-nav button { padding: 8px 8px; font-size: 12px; }
+  .lgn-hero-left { padding: 22px 18px; }
+  .lgn-hero-title { font-size: 18px; }
+  .lgn-hero-right { padding: 16px 16px 28px; }
+  .lgn-card {
+    width: 100%;
+    padding: 22px 18px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(23, 24, 26, .1);
+  }
+  .lgn-legal { gap: 6px 12px; }
+  .lgn-legal-help { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
