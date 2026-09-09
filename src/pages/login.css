@@ -4,9 +4,10 @@
    ============================================================ */
 
 .lgn-page {
-  min-height: 100vh;
+  height: 100%;               /* #root is height:100% of the viewport */
   display: flex;
   flex-direction: column;
+  overflow: hidden;           /* the page itself never scrolls on desktop */
   background: #F1F2F5;
   color: var(--text-body);
   font-family: var(--font-body);
@@ -14,8 +15,8 @@
 
 /* ---------------- Header ---------------- */
 .lgn-hdr {
-  height: 58px;
-  flex-shrink: 0;
+  height: 56px;
+  flex: 0 0 auto;
   background: #fff;
   border-bottom: 1px solid #E6E7EB;
   display: flex;
@@ -53,10 +54,13 @@
 /* ---------------- Hero ---------------- */
 .lgn-hero {
   flex: 1;
+  min-height: 0;
+  height: 100%;
   position: relative;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   background: var(--brand);
+  overflow: hidden;
 }
 .lgn-hero::before {
   /* premium depth without a loud gradient */
@@ -126,11 +130,17 @@
 .lgn-hero-right {
   position: relative;
   z-index: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px clamp(24px, 4vw, 56px);
+  padding: 22px clamp(24px, 4vw, 56px);
+  overflow-y: auto;   /* safety net only for viewports shorter than the card */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .4) transparent;
 }
+.lgn-hero-right::-webkit-scrollbar { width: 7px; }
+.lgn-hero-right::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .38); border-radius: 4px; }
 
 /* ---------------- Login card ---------------- */
 .lgn-card {
@@ -139,17 +149,17 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(60, 4, 14, .28);
-  padding: 26px 28px;
+  padding: 24px 26px;
 }
 
-.lgn-card-head { margin-bottom: 14px; }
+.lgn-card-head { margin-bottom: 12px; }
 .lgn-kicker {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--brand);
-  margin: 0 0 7px;
+  margin: 0 0 6px;
 }
 .lgn-card-head h2 {
   font-family: var(--font-display);
@@ -170,7 +180,7 @@
   padding: 4px;
   background: #F1F2F5;
   border-radius: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .lgn-seg button {
   appearance: none;
@@ -193,7 +203,7 @@
 }
 
 /* fields */
-.lgn-form { display: flex; flex-direction: column; gap: 12px; }
+.lgn-form { display: flex; flex-direction: column; gap: 11px; }
 .lgn-field { display: flex; flex-direction: column; gap: 5px; }
 .lgn-field label { font-size: 12.5px; font-weight: 500; color: #333A47; }
 .lgn-input { position: relative; display: flex; align-items: center; }
@@ -351,8 +361,8 @@
 
 /* footer */
 .lgn-footer {
-  margin-top: 16px;
-  padding-top: 13px;
+  margin-top: 13px;
+  padding-top: 12px;
   border-top: 1px solid #ECEDF1;
   display: flex;
   align-items: center;
@@ -373,11 +383,16 @@
 }
 
 @media (max-width: 920px) {
-  .lgn-page { height: auto; overflow: visible; }
+  /* small screens scroll naturally instead of clipping */
+  .lgn-page { height: auto; min-height: 100vh; overflow: visible; }
   .lgn-hero {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
     grid-template-columns: 1fr;
     grid-auto-rows: min-content 1fr;
   }
+  .lgn-hero-left { overflow: visible; }
   .lgn-hero-right { overflow: visible; }
   .lgn-hero-deco { display: none; }
   .lgn-hero-left {
