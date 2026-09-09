@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_LABEL, CHANNEL_ROUTING_RULE, TICKET_CATEGORIES, TICKET_PRIORITIES } from '../../data/constants';
 import { combinedStatusFor, currentHandlerFor, currentStageName } from '../../utils/businessLogic';
 import { submitTicket } from '../../features/tickets/ticketsSlice';
@@ -10,7 +10,7 @@ import ModalShell from './ModalShell.jsx';
 export default function RaiseTicketModal({ ctx }) {
   const dispatch = useDispatch();
   const authType = useSelector((s) => s.auth.authType);
-  const inv = INVOICE_DATA.find((i) => i.no === ctx.no);
+  const inv = runtime.invoices.find((i) => i.no === ctx.no);
   const [category, setCategory] = useState(TICKET_CATEGORIES[0]);
   const [priority, setPriority] = useState('Medium');
   const [desc, setDesc] = useState('');

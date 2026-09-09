@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_LABEL } from '../../data/constants';
 import { handlerFor, supplierEmailFor, currentStageName } from '../../utils/businessLogic';
 import { closeModal, pushToast } from '../../features/ui/uiSlice';
@@ -8,7 +8,7 @@ import ModalShell from './ModalShell.jsx';
 
 export default function NotifyPreviewModal({ ctx }) {
   const dispatch = useDispatch();
-  const inv = INVOICE_DATA.find((i) => i.no === ctx.no);
+  const inv = runtime.invoices.find((i) => i.no === ctx.no);
   const [note, setNote] = useState('');
   if (!inv) return null;
   const h = handlerFor(inv);

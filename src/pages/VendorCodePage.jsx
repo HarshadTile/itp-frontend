@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { VENDOR_CODE_MAP, CHANNEL_LABEL, CHANNEL_SYNC_LABELS } from '../data/constants';
-import { SYNC_LOG } from '../data/invoices';
+import { runtime } from '../data/runtime';
 import { supplierForVendorCode, panFor, posForVendorCode, getInvoiceHistory, ticketInvoice } from '../utils/businessLogic';
 import { selectScopedInvoices } from '../features/invoices/selectors';
 import { setVcodeViewTab, openModal } from '../features/ui/uiSlice';
@@ -106,7 +106,7 @@ function VendorCodeHistory({ code, invoices }) {
   const ongoing = invoices.length - done - failed;
   const channelsUsed = [...new Set(invoices.map((i) => i.channel))];
   const syncLabels = channelsUsed.flatMap((k) => CHANNEL_SYNC_LABELS[k] || []);
-  const rows = SYNC_LOG.filter((s) => syncLabels.includes(s.channel));
+  const rows = runtime.syncLog.filter((s) => syncLabels.includes(s.channel));
 
   return (
     <>

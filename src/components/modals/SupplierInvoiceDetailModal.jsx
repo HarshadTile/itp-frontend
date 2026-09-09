@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_LABEL } from '../../data/constants';
 import { combinedStatusFor, currentHandlerFor, currentStageName } from '../../utils/businessLogic';
 import { openModal } from '../../features/ui/uiSlice';
@@ -8,11 +8,11 @@ import Badge from '../common/Badge.jsx';
 
 export default function SupplierInvoiceDetailModal({ ctx }) {
   const dispatch = useDispatch();
-  const inv = INVOICE_DATA.find((i) => i.no === ctx.no);
+  const inv = runtime.invoices.find((i) => i.no === ctx.no);
   if (!inv) return null;
   const cs = combinedStatusFor(inv);
   const contact = currentHandlerFor(inv);
-  const siblingInvoices = INVOICE_DATA.filter((i) => i.po === inv.po && i.no !== inv.no);
+  const siblingInvoices = runtime.invoices.filter((i) => i.po === inv.po && i.no !== inv.no);
 
   return (
     <ModalShell

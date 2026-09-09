@@ -1,8 +1,8 @@
-import { INVOICE_DATA } from '../data/invoices';
+import { runtime } from '../data/runtime';
 import InvoiceTable from '../components/invoices/InvoiceTable.jsx';
 
 export default function OutputsPage() {
-  const completed = INVOICE_DATA.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid');
+  const completed = runtime.invoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid');
   const bySupplier = {};
   completed.forEach((i) => { bySupplier[i.vendor] = (bySupplier[i.vendor] || 0) + 1; });
 

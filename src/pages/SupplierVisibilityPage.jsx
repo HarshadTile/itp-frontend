@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { SUPPLIERS } from '../data/invoices';
+import { suppliersFromRuntime } from '../data/runtime';
 import { vendorCodesFor, panFor, ticketInvoice } from '../utils/businessLogic';
 import { selectScopedInvoices } from '../features/invoices/selectors';
 import { setSupplierVisibilityQuery } from '../features/ui/uiSlice';
@@ -27,7 +27,7 @@ export default function SupplierVisibilityPage() {
         <div className="form-field" style={{ maxWidth: 340 }}>
           <label>Supplier</label>
           <select value={supplier} onChange={(e) => dispatch(setSupplierVisibilityQuery(e.target.value))}>
-            {SUPPLIERS.map((s) => <option key={s}>{s}</option>)}
+            {suppliersFromRuntime().map((s) => <option key={s}>{s}</option>)}
           </select>
         </div>
         <div className="row" style={{ marginTop: 10 }}>

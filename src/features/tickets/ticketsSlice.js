@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { INITIAL_TICKETS } from '../../data/tickets';
 import { APP_NOW, INTERNAL_TEAM_CHANNELS } from '../../data/constants';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { currentHandlerFor } from '../../utils/businessLogic';
 
 function today() {
@@ -12,7 +12,7 @@ function logActivity(t, text) {
   t.activity.push({ date: today(), text });
 }
 function findInvoice(no) {
-  return INVOICE_DATA.find((i) => i.no === no);
+  return runtime.invoices.find((i) => i.no === no);
 }
 
 const initialState = {

@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { supplierForVendorCode, panFor, supplierEmailFor, synthPhone, posForVendorCode, ticketInvoice } from '../../utils/businessLogic';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { closeModal } from '../../features/ui/uiSlice';
 import ModalShell from './ModalShell.jsx';
 
@@ -11,7 +11,7 @@ export default function VendorCodePreviewModal({ ctx }) {
   const { authType } = useSelector((s) => s.auth);
   const code = ctx.code;
   const supplier = supplierForVendorCode(code);
-  const invoices = INVOICE_DATA.filter((i) => i.vcode === code);
+  const invoices = runtime.invoices.filter((i) => i.vcode === code);
   const poCount = Object.keys(posForVendorCode(code)).length;
   const ticketItems = useSelector((s) => s.tickets.items);
   const openIssues = ticketItems.filter((t) => ticketInvoice(t)?.vcode === code).filter((t) => t.status === 'Open' || t.status === 'In Progress').length;

@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_STAGES, CHANNEL_LABEL } from '../../data/constants';
 import { combinedStatusFor, currentHandlerFor, stageProgress, panFor, activityLogRows } from '../../utils/businessLogic';
 import { setSupplierHomeTab, openModal } from '../../features/ui/uiSlice';
@@ -10,7 +10,7 @@ export default function SupplierHomePage() {
   const { supplierLoginVcode: code, supplierQuery: supplier, supplierPAN } = useSelector((s) => s.auth);
   const activeTab = useSelector((s) => s.ui.supplierHomeTab) || 'current';
 
-  const codeInvoices = INVOICE_DATA.filter((i) => i.vcode === code);
+  const codeInvoices = runtime.invoices.filter((i) => i.vcode === code);
   const inProgress = codeInvoices.filter((i) => !['Paid', 'Short-Paid', 'Failed'].includes(i.status));
   const byLabel = {};
   codeInvoices.forEach((inv) => { const l = combinedStatusFor(inv).label; byLabel[l] = (byLabel[l] || 0) + 1; });

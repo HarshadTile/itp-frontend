@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_LABEL } from '../../data/constants';
 import { useDispatch } from 'react-redux';
 import { openModal } from '../../features/ui/uiSlice';
@@ -7,7 +7,7 @@ import { openModal } from '../../features/ui/uiSlice';
 export default function SupplierLogsPage() {
   const dispatch = useDispatch();
   const code = useSelector((s) => s.auth.supplierLoginVcode);
-  const done = INVOICE_DATA.filter((i) => i.vcode === code && (i.status === 'Paid' || i.status === 'Short-Paid'));
+  const done = runtime.invoices.filter((i) => i.vcode === code && (i.status === 'Paid' || i.status === 'Short-Paid'));
 
   return (
     <>

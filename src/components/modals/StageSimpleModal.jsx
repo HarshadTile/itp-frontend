@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_LABEL, STATUS_CHIP } from '../../data/constants';
 import { currentStageName, handlerFor } from '../../utils/businessLogic';
 import ModalShell from './ModalShell.jsx';
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 export default function StageSimpleModal({ ctx }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const inv = INVOICE_DATA.find((i) => i.no === ctx.no);
+  const inv = runtime.invoices.find((i) => i.no === ctx.no);
   if (!inv) return null;
   const h = handlerFor(inv);
 

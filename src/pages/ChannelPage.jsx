@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { CHANNELS, VIEW_COLUMNS, CHANNEL_LABEL, CHANNEL_SYNC_LABELS } from '../data/constants';
-import { SYNC_LOG } from '../data/invoices';
+import { runtime } from '../data/runtime';
 import { selectScopedInvoices } from '../features/invoices/selectors';
 import { channelViewRows, ticketBreached, ticketInvoice } from '../utils/businessLogic';
 import { setChannelViewTab, setChannelQueryViewMode, openModal } from '../features/ui/uiSlice';
@@ -53,7 +53,7 @@ export default function ChannelPage() {
 }
 
 function ChannelHistory({ channelKey, channelInvoices }) {
-  const rows = SYNC_LOG.filter((s) => CHANNEL_SYNC_LABELS[channelKey].includes(s.channel));
+  const rows = runtime.syncLog.filter((s) => CHANNEL_SYNC_LABELS[channelKey].includes(s.channel));
   const done = channelInvoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid').length;
   const failed = channelInvoices.filter((i) => i.status === 'Failed').length;
   const ongoing = channelInvoices.length - done - failed;

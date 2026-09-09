@@ -1,7 +1,7 @@
 import {
   CHANNEL_STAGES, APPROVER_POOL, ACCOUNTS_POOL, VIEW_MILESTONE, APP_NOW,
 } from '../data/constants';
-import { INVOICE_DATA } from '../data/invoices';
+import { runtime } from '../data/runtime';
 import { VENDOR_CODE_MAP } from '../data/constants';
 
 /* ===================== small deterministic helpers ===================== */
@@ -19,7 +19,7 @@ export function addDays(dateStr, days) {
 
 /* ===================== supplier / PAN / vendor code identity ===================== */
 export function supplierForVendorCode(code) {
-  const fromInvoice = INVOICE_DATA.find((i) => i.vcode === code);
+  const fromInvoice = runtime.invoices.find((i) => i.vcode === code);
   if (fromInvoice) return fromInvoice.vendor;
   const fromMap = VENDOR_CODE_MAP.rows.find((r) => r[0] === code);
   if (fromMap) return fromMap[1];
@@ -51,7 +51,7 @@ export function supplierEmailFor(vendor) {
 export function vendorCodesFor(supplier) {
   const fromMap = VENDOR_CODE_MAP.rows.filter((r) => r[1] === supplier).map((r) => r[0]);
   if (fromMap.length) return fromMap;
-  return [...new Set(INVOICE_DATA.filter((i) => i.vendor === supplier).map((i) => i.vcode))];
+  return [...new Set(runtime.invoices.filter((i) => i.vendor === supplier).map((i) => i.vcode))];
 }
 
 const PAN_MASTER = {};
@@ -61,7 +61,7 @@ export function panFor(supplier) {
 }
 
 export function posForVendorCode(code) {
-  const invs = INVOICE_DATA.filter((i) => i.vcode === code);
+  const invs = runtime.invoices.filter((i) => i.vcode === code);
   const byPO = {};
   invs.forEach((i) => { (byPO[i.po] = byPO[i.po] || []).push(i); });
   return byPO;
@@ -154,7 +154,7 @@ export function getInvoiceHistory(inv, tickets) {
 
 export function getGlobalHistory(list, tickets) {
   const rows = [];
-  (list || INVOICE_DATA).forEach((inv) => {
+  (list || runtime.invoices).forEach((inv) => {
     getInvoiceHistory(inv, tickets).forEach((ev) => rows.push({ ...ev, no: inv.no, vcode: inv.vcode, vendor: inv.vendor, po: inv.po, channel: inv.channel }));
   });
   rows.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -202,7 +202,7 @@ export function channelViewRows(channelKey, view, invoices) {
 
 /* ===================== tickets: SLA breach ===================== */
 export function ticketInvoice(t) {
-  return INVOICE_DATA.find((i) => i.no === t.no);
+  return runtime.invoices.find((i) => i.no === t.no);
 }
 
 export function ticketBreached(t) {

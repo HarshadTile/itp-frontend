@@ -1,5 +1,5 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { INTERNAL_TEAM_CHANNELS } from '../../data/constants';
 
 /** Every invoice a login is allowed to see, given the current auth scope.
@@ -7,9 +7,9 @@ import { INTERNAL_TEAM_CHANNELS } from '../../data/constants';
 export const selectScopedInvoices = createSelector(
   [(state) => state.auth.authType, (state) => state.auth.channelScope],
   (authType, channelScope) => {
-    if (authType === 'supplier') return INVOICE_DATA; // supplier-side pages filter by vcode themselves
-    if (channelScope === 'internalTeam') return INVOICE_DATA.filter((i) => INTERNAL_TEAM_CHANNELS.includes(i.channel));
-    return INVOICE_DATA;
+    if (authType === 'supplier') return runtime.invoices; // supplier-side pages filter by vcode themselves
+    if (channelScope === 'internalTeam') return runtime.invoices.filter((i) => INTERNAL_TEAM_CHANNELS.includes(i.channel));
+    return runtime.invoices;
   },
 );
 

@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { INVOICE_DATA } from '../../data/invoices';
+import { runtime } from '../../data/runtime';
 import { CHANNEL_STAGES, CHANNEL_LABEL, CHANNEL_ROUTING_RULE, STATUS_CHIP } from '../../data/constants';
 import { stageProgress, handlerFor } from '../../utils/businessLogic';
 import { closeModal, openModal } from '../../features/ui/uiSlice';
@@ -8,7 +8,7 @@ import Badge from '../common/Badge.jsx';
 
 export default function InvoiceDetailModal({ ctx }) {
   const dispatch = useDispatch();
-  const inv = INVOICE_DATA.find((i) => i.no === ctx.no);
+  const inv = runtime.invoices.find((i) => i.no === ctx.no);
   if (!inv) return null;
   const stages = CHANNEL_STAGES[inv.channel];
   const done = stageProgress(inv.channel, inv.status);

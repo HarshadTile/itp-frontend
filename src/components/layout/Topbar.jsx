@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CHANNELS } from '../../data/constants';
-import { SUPPLIERS } from '../../data/invoices';
+import { suppliersFromRuntime } from '../../data/runtime';
 import { vendorCodesFor, panFor } from '../../utils/businessLogic';
 import { switchIdentity } from '../../features/auth/authSlice';
 import { pushToast, resetFiltersOnIdentitySwitch } from '../../features/ui/uiSlice';
@@ -57,7 +57,7 @@ export default function Topbar() {
             <option value="internal:all">All Channels (HQ)</option>
             <option value="internal:internalTeam">Internal Team</option>
           </optgroup>
-          {SUPPLIERS.map((s) => (
+          {suppliersFromRuntime().map((s) => (
             <optgroup key={s} label={`Supplier: ${s}`}>
               {vendorCodesFor(s).map((code) => (
                 <option key={code} value={`supplier:${code}`}>{s.split(' ')[0]} + {code}</option>
