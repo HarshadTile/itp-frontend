@@ -9,13 +9,48 @@ lifted directly from mahindra.com; the logo is used as supplied.
 
 ## Getting started
 
+Requires a local **MySQL 8+/9** server running on `localhost:3306`.
+
 ```bash
 npm install
-npm run dev      # starts the dev server (Vite)
-npm run build    # production build to /dist
-npm run test     # runs the automated test suite (27 tests)
-npm run lint     # oxlint
+cp server/.env.example server/.env     # then edit DB_PASSWORD to match your MySQL
+npm run seed                           # creates the `mahindra_i2p` database + demo data
+npm run dev:all                        # API on :3001 + Vite web app together
 ```
+
+Other scripts:
+
+```bash
+npm run server       # API only
+npm run dev          # web only (expects the API already running)
+npm run build        # production build to /dist
+npm run test         # client test suite (Vitest + RTL)
+npm run test:server  # server test suite (hits the local MySQL)
+npm run lint         # oxlint
+```
+
+### Demo logins (verified against the database)
+
+- **Internal** — `admin` / `admin123` (Admin, All Channels) or `priya` / `priya123`
+  (MDE Invoice Team). Pick the portal scope on the login screen.
+- **Supplier** — pick a company + vendor code, any phone number (OTP is simulated).
+
+## Database
+
+A small Express API (`server/`) owns a MySQL database, `mahindra_i2p`:
+
+| Table | Holds |
+|---|---|
+| `users`, `sessions` | login accounts (bcrypt) and active bearer-token sessions |
+| `invoices` | the invoice register, plus `stage_index` for stage moves |
+| `tickets`, `ticket_comments`, `ticket_activity` | the inquiry desk |
+| `table_rows` | the editable Settings grids (users, notification rules, audit) |
+| `settings`, `sync_log`, `integrations` | role matrix, 2FA, sync history, connectors |
+
+The React app loads everything once after login (`GET /api/bootstrap`) and every
+in-app change (raise a ticket, drag a Kanban card, toggle a permission, advance
+an invoice stage) is written straight back to MySQL, so it survives a restart.
+Re-run `npm run seed` at any time to reset to the demo dataset.
 
 ## Demo logins
 
