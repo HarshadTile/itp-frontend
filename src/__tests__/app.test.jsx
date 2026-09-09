@@ -278,7 +278,7 @@ describe('Internal admin - full navigation', () => {
   it('logs out and returns to login screen', async () => {
     const { user } = await loginAdmin();
     await user.click(screen.getByText('Logout'));
-    expect(await screen.findByText('Sign in to continue')).toBeInTheDocument();
+    expect(await screen.findByText('Sign in to Invoice to Payment Tracker')).toBeInTheDocument();
   });
 });
 

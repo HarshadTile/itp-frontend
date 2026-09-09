@@ -26,20 +26,6 @@ const EyeOffIcon = (p) => <Ic {...p} d={<><path d="M3 3l18 18M10.6 10.6a3 3 0 0 
 const AlertIcon = (p) => <Ic {...p} d={<><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></>} />;
 const CheckIcon = (p) => <Ic {...p} d={<><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></>} />;
 
-function BrandIllustration() {
-  return (
-    <svg className="lgn-illus" viewBox="0 0 360 200" fill="none" aria-hidden="true">
-      <rect x="26" y="36" width="150" height="128" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.35)" />
-      <rect x="44" y="20" width="150" height="128" rx="10" fill="rgba(255,255,255,.10)" stroke="rgba(255,255,255,.55)" />
-      <path d="M62 46h114M62 66h114M62 86h84M62 106h114M62 126h64" stroke="rgba(255,255,255,.7)" strokeWidth="4" strokeLinecap="round" />
-      <path d="M214 96h70" stroke="rgba(255,255,255,.55)" strokeWidth="4" strokeLinecap="round" />
-      <path d="m270 84 16 12-16 12" stroke="rgba(255,255,255,.7)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="316" cy="96" r="26" fill="rgba(255,255,255,.12)" stroke="#fff" strokeWidth="3" />
-      <path d="m304 96 8 8 16-18" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -114,36 +100,23 @@ export default function LoginPage() {
 
   return (
     <div className="lgn-page">
-      {/* -------- Brand panel -------- */}
+      {/* -------- Brand panel (minimal) -------- */}
       <aside className="lgn-brand">
-        <span className="lgn-brand-shape s1" />
-        <span className="lgn-brand-shape s2" />
-        <span className="lgn-brand-shape s3" />
-
-        <div className="lgn-brand-top">
+        <div className="lgn-brand-deco" aria-hidden="true">
+          <span className="lgn-brand-lines" />
+        </div>
+        <div className="lgn-brand-center">
           <img className="lgn-brand-logo" src={logo} alt="Mahindra" />
+          <p className="lgn-brand-title">Invoice to Payment Tracker</p>
         </div>
-
-        <div className="lgn-brand-mid">
-          <p className="lgn-brand-kicker">Finance &amp; Procurement</p>
-          <h2 className="lgn-brand-title">Invoice to Payment Tracker</h2>
-          <p className="lgn-brand-desc">
-            Streamline invoice processing, approvals, and payment tracking across
-            your organization — with full visibility from upload to UTR.
-          </p>
-          <BrandIllustration />
-        </div>
-
-        <p className="lgn-brand-foot">Secure enterprise access · Mahindra Group</p>
       </aside>
 
       {/* -------- Auth panel -------- */}
       <main className="lgn-auth">
-        <div className="lgn-auth-inner">
+        <div className="lgn-card">
           <div className="lgn-auth-head">
-            <img className="lgn-auth-logo" src={logo} alt="Mahindra" />
             <h1>Welcome back</h1>
-            <p>Sign in to continue</p>
+            <p>Sign in to Invoice to Payment Tracker</p>
           </div>
 
           <div className="lgn-seg" role="group" aria-label="Login type">
@@ -224,6 +197,7 @@ export default function LoginPage() {
               <button type="submit" className="lgn-submit" disabled={busy || done}>
                 {busy && <span className="lgn-spinner" />}
                 {busy ? 'Signing in…' : done ? 'Signed in' : 'Sign In'}
+                {!busy && !done && <span className="lgn-arrow" aria-hidden="true">→</span>}
               </button>
 
               <p className="lgn-hint">
@@ -280,6 +254,7 @@ export default function LoginPage() {
               <button type="submit" className="lgn-submit" disabled={busy || done}>
                 {busy && <span className="lgn-spinner" />}
                 {busy ? 'Signing in…' : done ? 'Signed in' : 'Sign In'}
+                {!busy && !done && <span className="lgn-arrow" aria-hidden="true">→</span>}
               </button>
 
               <p className="lgn-hint">
