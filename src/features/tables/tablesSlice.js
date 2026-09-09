@@ -1,50 +1,35 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { api } from '../../api/client';
 
-const SEED = {
-  'settings-users': [
-    ['Ravi Kulkarni', 'r.kulkarni@company.com', 'MDE Invoice Lead', 'Procurement', 'Admin', 'Active'],
-    ['Priya Deshmukh', 'p.deshmukh@company.com', 'Invoice Processor', 'Procurement', 'MDE Invoice Team', 'Active'],
-    ['Ajay Menon', 'a.menon@company.com', 'Category Approver', 'Sourcing', 'Approver', 'Active'],
-    ['Neha Kulkarni', 'n.kulkarni@company.com', 'Accounts Executive', 'Finance', 'Accounts', 'Active'],
-  ],
-  'settings-notifications': [
-    ['Invoice Uploaded', 'Internal, MDE Invoice Team', '-', 'On'],
-    ['Approval Pending > 3 days', 'Internal, Approver', 'MDE Invoice Team', 'On'],
-    ['Payment Due Today', 'Internal, Accounts', 'COE', 'On'],
-    ['Payment Completed', 'Supplier', 'MDE Invoice Team', 'On'],
-  ],
-  'settings-audit': [
-    ['2026-08-06 07:10', 'r.kulkarni@company.com', 'Login', 'SSO sign-in'],
-    ['2026-08-05 18:02', 'MDE Invoice Team', 'Vendor Master Edit', 'Added vendor code TCLB15'],
-  ],
-};
-
+// Row data is loaded from the API after login (see hydrateThunks.loadBootstrap).
 const tablesSlice = createSlice({
   name: 'tables',
   initialState: { byKey: {} },
   reducers: {
-    ensureSeeded(state, action) {
-      const key = action.payload;
-      if (!state.byKey[key] && SEED[key]) state.byKey[key] = SEED[key].map((r) => [...r]);
+    hydrateTables(state, action) {
+      state.byKey = action.payload || {};
     },
-    setRows(state, action) {
+    // ensureSeeded is now a no-op — kept so existing callers don't break.
+    ensureSeeded() {},
+
+    setRowsLocal(state, action) {
       const { key, rows } = action.payload;
       state.byKey[key] = rows;
     },
-    addRow(state, action) {
+    addRowLocal(state, action) {
       const { key, row } = action.payload;
       if (!state.byKey[key]) state.byKey[key] = [];
       state.byKey[key].push(row);
     },
-    updateRow(state, action) {
+    updateRowLocal(state, action) {
       const { key, idx, row } = action.payload;
       if (state.byKey[key]) state.byKey[key][idx] = row;
     },
-    deleteRow(state, action) {
+    deleteRowLocal(state, action) {
       const { key, idx } = action.payload;
       if (state.byKey[key]) state.byKey[key].splice(idx, 1);
     },
-    toggleNotifRule(state, action) {
+    toggleNotifRuleLocal(state, action) {
       const idx = action.payload;
       const rows = state.byKey['settings-notifications'];
       if (rows && rows[idx]) rows[idx][3] = rows[idx][3] === 'On' ? 'Off' : 'On';
@@ -52,8 +37,39 @@ const tablesSlice = createSlice({
   },
 });
 
-export const { ensureSeeded, setRows, addRow, updateRow, deleteRow, toggleNotifRule } = tablesSlice.actions;
+export const {
+  hydrateTables, ensureSeeded,
+  setRowsLocal, addRowLocal, updateRowLocal, deleteRowLocal, toggleNotifRuleLocal,
+} = tablesSlice.actions;
 export default tablesSlice.reducer;
 
 const EMPTY_ROWS = Object.freeze([]);
 export const selectTable = (state, key) => state.tables.byKey[key] || EMPTY_ROWS;
+
+/* ---- write-through thunks ---- */
+
+// Persist whatever rows the given key now holds in the store.
+const persist = (key) => (_dispatch, getState) => api.put(`/tables/${key}`, {
+  rows: getState().tables.byKey[key] || [],
+});
+
+export const setRows = (payload) => async (dispatch) => {
+  dispatch(setRowsLocal(payload));
+  await dispatch(persist(payload.key));
+};
+export const addRow = (payload) => async (dispatch) => {
+  dispatch(addRowLocal(payload));
+  await dispatch(persist(payload.key));
+};
+export const updateRow = (payload) => async (dispatch) => {
+  dispatch(updateRowLocal(payload));
+  await dispatch(persist(payload.key));
+};
+export const deleteRow = (payload) => async (dispatch) => {
+  dispatch(deleteRowLocal(payload));
+  await dispatch(persist(payload.key));
+};
+export const toggleNotifRule = (idx) => async (dispatch) => {
+  dispatch(toggleNotifRuleLocal(idx));
+  await dispatch(persist('settings-notifications'));
+};

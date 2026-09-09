@@ -1,6 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { ROLE_MATRIX } from '../../data/constants';
+import { api } from '../../api/client';
 
+// Seeded with the static defaults so selectors work before bootstrap; replaced
+// by hydrateSettings once the API responds.
 const initialState = {
   roleMatrix: JSON.parse(JSON.stringify(ROLE_MATRIX)),
   integrations: [
@@ -17,17 +20,35 @@ const settingsSlice = createSlice({
   name: 'settings',
   initialState,
   reducers: {
-    togglePermission(state, action) {
+    hydrateSettings(state, action) {
+      const p = action.payload || {};
+      if (p.roleMatrix) state.roleMatrix = p.roleMatrix;
+      if (p.integrations) state.integrations = p.integrations;
+      if (p.senderEmail != null) state.senderEmail = p.senderEmail;
+      if (p.twoFactorOn != null) state.twoFactorOn = p.twoFactorOn;
+    },
+    togglePermissionLocal(state, action) {
       const { role, cap } = action.payload;
       state.roleMatrix[role][cap] = !state.roleMatrix[role][cap];
     },
-    toggleTwoFactor(state) {
+    toggleTwoFactorLocal(state) {
       state.twoFactorOn = !state.twoFactorOn;
     },
   },
 });
 
-export const { togglePermission, toggleTwoFactor } = settingsSlice.actions;
+export const { hydrateSettings, togglePermissionLocal, toggleTwoFactorLocal } = settingsSlice.actions;
 export default settingsSlice.reducer;
 
 export const selectRoleMatrix = (state) => state.settings.roleMatrix;
+
+/* ---- write-through thunks ---- */
+export const togglePermission = (payload) => async (dispatch, getState) => {
+  dispatch(togglePermissionLocal(payload));
+  await api.put('/settings', { roleMatrix: getState().settings.roleMatrix });
+};
+
+export const toggleTwoFactor = () => async (dispatch, getState) => {
+  dispatch(toggleTwoFactorLocal());
+  await api.put('/settings', { twoFactorOn: getState().settings.twoFactorOn });
+};

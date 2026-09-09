@@ -1,8 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { INITIAL_TICKETS } from '../../data/tickets';
 import { APP_NOW, INTERNAL_TEAM_CHANNELS } from '../../data/constants';
 import { runtime } from '../../data/runtime';
-import { currentHandlerFor } from '../../utils/businessLogic';
+import { api } from '../../api/client';
 
 function today() {
   return new Date(APP_NOW).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -15,8 +14,9 @@ function findInvoice(no) {
   return runtime.invoices.find((i) => i.no === no);
 }
 
+// Tickets are loaded from the API after login (see hydrateThunks.loadBootstrap).
 const initialState = {
-  items: INITIAL_TICKETS,
+  items: [],
   seq: 1005,
 };
 
@@ -24,19 +24,35 @@ const ticketsSlice = createSlice({
   name: 'tickets',
   initialState,
   reducers: {
-    submitTicket(state, action) {
+    hydrateTickets(state, action) {
+      state.items = action.payload.items || [];
+      if (action.payload.seq != null) state.seq = action.payload.seq;
+    },
+    // Replace one ticket in place with the server's authoritative copy.
+    replaceTicket(state, action) {
+      const next = action.payload;
+      const i = state.items.findIndex((x) => x.id === next.id);
+      if (i >= 0) state.items[i] = next;
+      else state.items.unshift(next);
+    },
+    prependTicket(state, action) {
+      state.items.unshift(action.payload.ticket);
+      if (action.payload.seq != null) state.seq = action.payload.seq;
+    },
+
+    // ---- optimistic local mutations (also used directly by unit tests) ----
+    submitTicketLocal(state, action) {
       const { no, category, priority, desc, raisedBy } = action.payload;
       state.seq += 1;
       const id = 'TCK-' + state.seq;
-      const inv = findInvoice(no);
-      const assignee = inv ? currentHandlerFor(inv).name : 'MDE Invoice Team';
       state.items.unshift({
         id, no, category, desc: desc || 'No description provided.', status: 'Open',
-        priority: priority || 'Medium', assignee, raisedBy, raisedDate: today(), slaHours: 24,
-        comments: [], activity: [{ date: today(), text: `Ticket created by ${raisedBy}, priority set to ${priority || 'Medium'}, assigned to ${assignee}.` }],
+        priority: priority || 'Medium', assignee: 'MDE Invoice Team', raisedBy,
+        raisedDate: today(), slaHours: 24, comments: [],
+        activity: [{ date: today(), text: `Ticket created by ${raisedBy}, priority set to ${priority || 'Medium'}, assigned to MDE Invoice Team.` }],
       });
     },
-    postComment(state, action) {
+    postCommentLocal(state, action) {
       const { id, author, role, text } = action.payload;
       const t = state.items.find((x) => x.id === id);
       if (!t) return;
@@ -52,7 +68,7 @@ const ticketsSlice = createSlice({
         logActivity(t, 'Status changed to In Progress.');
       }
     },
-    setStatus(state, action) {
+    setStatusLocal(state, action) {
       const { id, status } = action.payload;
       const t = state.items.find((x) => x.id === id);
       if (!t || t.status === status) return;
@@ -60,8 +76,7 @@ const ticketsSlice = createSlice({
       if (status === 'Resolved') t.resolvedDate = today();
       logActivity(t, `Status changed to ${status}.`);
     },
-    moveStatus(state, action) {
-      // same as setStatus, distinct name for the Kanban drag path (audit text differs slightly)
+    moveStatusLocal(state, action) {
       const { id, status } = action.payload;
       const t = state.items.find((x) => x.id === id);
       if (!t || t.status === status) return;
@@ -69,7 +84,7 @@ const ticketsSlice = createSlice({
       if (status === 'Resolved') t.resolvedDate = today();
       logActivity(t, `Status changed to ${status} (moved on board).`);
     },
-    setPriority(state, action) {
+    setPriorityLocal(state, action) {
       const { id, priority } = action.payload;
       const t = state.items.find((x) => x.id === id);
       if (!t) return;
@@ -77,7 +92,7 @@ const ticketsSlice = createSlice({
       t.priority = priority;
       logActivity(t, `Priority changed from ${old} to ${priority}.`);
     },
-    setAssignee(state, action) {
+    setAssigneeLocal(state, action) {
       const { id, assignee } = action.payload;
       const t = state.items.find((x) => x.id === id);
       if (!t) return;
@@ -88,8 +103,66 @@ const ticketsSlice = createSlice({
   },
 });
 
-export const { submitTicket, postComment, setStatus, moveStatus, setPriority, setAssignee } = ticketsSlice.actions;
+export const {
+  hydrateTickets, replaceTicket, prependTicket,
+  submitTicketLocal, postCommentLocal, setStatusLocal, moveStatusLocal,
+  setPriorityLocal, setAssigneeLocal,
+} = ticketsSlice.actions;
 export default ticketsSlice.reducer;
+
+/* ---- write-through thunks (public API used by components) ---- */
+
+export const submitTicket = (payload) => async (dispatch) => {
+  const { ticket, seq } = await api.post('/tickets', payload);
+  dispatch(prependTicket({ ticket, seq }));
+  return ticket;
+};
+
+export const postComment = (payload) => async (dispatch) => {
+  dispatch(postCommentLocal(payload));
+  const updated = await api.post(`/tickets/${payload.id}/comments`, {
+    author: payload.author, role: payload.role, text: payload.text, date: today(),
+  });
+  dispatch(replaceTicket(updated));
+  return updated;
+};
+
+function statusThunk(localAction, boardMove) {
+  return ({ id, status }) => async (dispatch) => {
+    dispatch(localAction({ id, status }));
+    const suffix = boardMove ? ' (moved on board)' : '';
+    const body = { status, activity: [{ date: today(), text: `Status changed to ${status}${suffix}.` }] };
+    if (status === 'Resolved') body.resolvedDate = today();
+    const updated = await api.patch(`/tickets/${id}`, body);
+    dispatch(replaceTicket(updated));
+    return updated;
+  };
+}
+
+export const setStatus = statusThunk(setStatusLocal, false);
+export const moveStatus = statusThunk(moveStatusLocal, true);
+
+export const setPriority = ({ id, priority }) => async (dispatch, getState) => {
+  const old = getState().tickets.items.find((t) => t.id === id)?.priority;
+  dispatch(setPriorityLocal({ id, priority }));
+  const updated = await api.patch(`/tickets/${id}`, {
+    priority,
+    activity: [{ date: today(), text: `Priority changed from ${old} to ${priority}.` }],
+  });
+  dispatch(replaceTicket(updated));
+  return updated;
+};
+
+export const setAssignee = ({ id, assignee }) => async (dispatch, getState) => {
+  const old = getState().tickets.items.find((t) => t.id === id)?.assignee;
+  dispatch(setAssigneeLocal({ id, assignee }));
+  const updated = await api.patch(`/tickets/${id}`, {
+    assignee,
+    activity: [{ date: today(), text: `Reassigned from ${old} to ${assignee}.` }],
+  });
+  dispatch(replaceTicket(updated));
+  return updated;
+};
 
 /* ---- selectors ---- */
 export const selectAllTickets = (state) => state.tickets.items;
