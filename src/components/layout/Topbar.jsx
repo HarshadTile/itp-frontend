@@ -5,6 +5,7 @@ import { suppliersFromRuntime } from '../../data/runtime';
 import { vendorCodesFor, panFor } from '../../utils/businessLogic';
 import { switchIdentity } from '../../features/auth/authSlice';
 import { pushToast, resetFiltersOnIdentitySwitch } from '../../features/ui/uiSlice';
+import { Search, Bell, HelpCircle, ChevronDown } from '../common/icons.jsx';
 
 function crumbFor(pathname, params) {
   if (pathname.startsWith('/app/invoices')) return 'Invoice Tracking';
@@ -32,6 +33,9 @@ export default function Topbar() {
   const { authType, channelScope, supplierLoginVcode, supplierQuery, currentUser } = useSelector((s) => s.auth);
 
   const identityValue = authType === 'supplier' ? `supplier:${supplierLoginVcode}` : `internal:${channelScope}`;
+  const crumb = crumbFor(location.pathname, params);
+  const avatarText = authType === 'supplier' ? panFor(supplierQuery).slice(0, 2) : currentUser.initials;
+  const userName = authType === 'supplier' ? supplierQuery : currentUser.name;
 
   function handleIdentityChange(e) {
     const val = e.target.value;
@@ -48,27 +52,59 @@ export default function Topbar() {
   }
 
   return (
-    <div className="topbar">
-      <div className="crumb" dangerouslySetInnerHTML={{ __html: `<b>${crumbFor(location.pathname, params)}</b>` }} />
+    <header className="topbar">
+      <div className="crumb"><b>{crumb}</b></div>
+
       <div className="topbar-right">
-        <input className="search-box" placeholder="Search invoice, PO, vendor code..." onFocus={() => navigate(authType === 'supplier' ? '/supplier/home' : '/app/search')} readOnly />
-        <select className="role-select" value={identityValue} onChange={handleIdentityChange} title="Switch view: internal team / portal, or supplier vendor code">
-          <optgroup label="Internal Team">
-            <option value="internal:all">All Channels (HQ)</option>
-            <option value="internal:internalTeam">Internal Team</option>
-          </optgroup>
-          {suppliersFromRuntime().map((s) => (
-            <optgroup key={s} label={`Supplier: ${s}`}>
-              {vendorCodesFor(s).map((code) => (
-                <option key={code} value={`supplier:${code}`}>{s.split(' ')[0]} + {code}</option>
-              ))}
+        <div className="topbar-search">
+          <Search size={16} aria-hidden="true" />
+          <input
+            className="search-box"
+            placeholder="Search invoice, PO, vendor…"
+            aria-label="Search invoices, POs, vendor codes"
+            onFocus={() => navigate(authType === 'supplier' ? '/supplier/home' : '/app/search')}
+            readOnly
+          />
+        </div>
+
+        <div className="workspace-select">
+          <select
+            className="role-select"
+            value={identityValue}
+            onChange={handleIdentityChange}
+            aria-label="Switch workspace"
+            title="Switch view: internal team / portal, or supplier vendor code"
+          >
+            <optgroup label="Internal Team">
+              <option value="internal:all">All Channels (HQ)</option>
+              <option value="internal:internalTeam">Internal Team</option>
             </optgroup>
-          ))}
-        </select>
-        <button type="button" className="icon-btn" title="Notifications" onClick={() => dispatch(pushToast('No new notifications.'))}>🔔</button>
-        <button type="button" className="icon-btn" title="Help" onClick={() => dispatch(pushToast('Help & documentation coming soon.'))}>?</button>
-        <div className="avatar" title={authType === 'supplier' ? supplierQuery : currentUser.name}>{authType === 'supplier' ? panFor(supplierQuery).slice(0, 2) : currentUser.initials}</div>
+            {suppliersFromRuntime().map((s) => (
+              <optgroup key={s} label={`Supplier: ${s}`}>
+                {vendorCodesFor(s).map((code) => (
+                  <option key={code} value={`supplier:${code}`}>{s.split(' ')[0]} + {code}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <ChevronDown size={14} aria-hidden="true" />
+        </div>
+
+        <button type="button" className="icon-btn" aria-label="Notifications"
+          onClick={() => dispatch(pushToast('No new notifications.'))}>
+          <Bell size={18} />
+        </button>
+        <button type="button" className="icon-btn" aria-label="Help"
+          onClick={() => dispatch(pushToast('Help & documentation coming soon.'))}>
+          <HelpCircle size={18} />
+        </button>
+
+        <button type="button" className="avatar" title={userName}
+          aria-label={`Signed in as ${userName}`}
+          onClick={() => navigate(authType === 'supplier' ? '/supplier/profile' : '/app/profile')}>
+          {avatarText}
+        </button>
       </div>
-    </div>
+    </header>
   );
 }

@@ -8,6 +8,24 @@ import StatCard from '../components/common/StatCard.jsx';
 import BarChart from '../components/common/BarChart.jsx';
 import DonutChart from '../components/common/DonutChart.jsx';
 
+/* small stroke glyphs for the KPI tiles — same family as the rest of the app */
+const ClockIcon = (p) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+);
+const CardIcon = (p) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+);
+const EyeOffIcon = (p) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A9.5 9.5 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.5 6.5A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.5-.7" /></svg>
+);
+const SplitIcon = (p) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M12 3v18M5 8l-3 4 3 4M19 8l3 4-3 4" /></svg>
+);
+
 const STATUS_COLOR = {
   Paid: 'var(--green)', 'Payment Due': 'var(--blue)', Booked: 'var(--purple)', Approved: 'var(--blue)',
   'Pending Approval': 'var(--amber)', Uploaded: '#94A3B8', 'Short-Paid': 'var(--amber)', Failed: 'var(--red)',
@@ -36,37 +54,40 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <header className="page-head">
         <h1 className="page-title">{isScoped ? `${scopeLabel} Invoice Tracking` : 'Invoice Tracking'}</h1>
-      </div>
+        <p className="page-sub">Monitor and manage invoices across processing channels — from upload through approval, booking and payment.</p>
+      </header>
 
-      <div className="sheet-carousel" style={{ margin: '12px 0 16px' }}>
-        <div className="car-track">
-          <button type="button" className={`car-chip${topTab === 'All Invoices' ? ' active' : ''}`} onClick={() => dispatch(setInvoicesTopTab('All Invoices'))}>All Invoices</button>
-          <button type="button" className={`car-chip${topTab === 'History' ? ' active' : ''}`} onClick={() => dispatch(setInvoicesTopTab('History'))}>History / Logs</button>
-        </div>
+      <div className="seg-tabs" role="tablist" aria-label="Invoice view">
+        <button type="button" role="tab" aria-selected={topTab === 'All Invoices'}
+          className={`seg-tab${topTab === 'All Invoices' ? ' active' : ''}`}
+          onClick={() => dispatch(setInvoicesTopTab('All Invoices'))}>All Invoices</button>
+        <button type="button" role="tab" aria-selected={topTab === 'History'}
+          className={`seg-tab${topTab === 'History' ? ' active' : ''}`}
+          onClick={() => dispatch(setInvoicesTopTab('History'))}>History / Logs</button>
       </div>
 
       {topTab === 'History' ? (
         <GlobalLogsBody invoiceList={invoices} tableKey="invoicesHistory" />
       ) : (
         <>
-          <div className="row" style={{ marginBottom: 20 }}>
-            <StatCard tone="warn" icon="⏳" label="Pending Approval" value={pendingApproval} sub="Awaiting Approver action" onClick={() => dispatch(setInvoiceFilterStatus('Pending Approval'))} active={invoiceFilterStatus === 'Pending Approval'} />
-            <StatCard icon="💳" label="Payment Due" value={paymentDue} sub="Booked, due per payment cycle" onClick={() => dispatch(setInvoiceFilterStatus('Payment Due'))} active={invoiceFilterStatus === 'Payment Due'} />
-            <StatCard tone="bad" icon="🔍" label="No UTR Visibility" value={noUtr} sub="Paid but UTR not yet synced from FBL1N" />
-            <StatCard tone="warn" icon="⚠" label="Short-Paid" value={shortPaid} sub="Amount paid < invoice amount" onClick={() => dispatch(setInvoiceFilterStatus('Short-Paid'))} active={invoiceFilterStatus === 'Short-Paid'} />
+          <div className="kpi-grid">
+            <StatCard tone="warn" icon={<ClockIcon />} label="Pending Approval" value={pendingApproval} sub="Awaiting approver action" onClick={() => dispatch(setInvoiceFilterStatus('Pending Approval'))} active={invoiceFilterStatus === 'Pending Approval'} />
+            <StatCard icon={<CardIcon />} label="Payment Due" value={paymentDue} sub="Booked, due per payment cycle" onClick={() => dispatch(setInvoiceFilterStatus('Payment Due'))} active={invoiceFilterStatus === 'Payment Due'} />
+            <StatCard tone="bad" icon={<EyeOffIcon />} label="No UTR Visibility" value={noUtr} sub="Paid but UTR not yet synced from FBL1N" />
+            <StatCard tone="warn" icon={<SplitIcon />} label="Short-Paid" value={shortPaid} sub="Amount paid is less than the invoice amount" onClick={() => dispatch(setInvoiceFilterStatus('Short-Paid'))} active={invoiceFilterStatus === 'Short-Paid'} />
           </div>
 
-          <div className="row" style={{ marginBottom: 20, alignItems: 'stretch' }}>
+          <div className="chart-grid">
             {!isScoped && (
-              <div className="card" style={{ flex: 2, minWidth: 340 }}>
-                <h3>Invoices by Channel <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11.5 }}>(click a bar to filter)</span></h3>
+              <div className="card">
+                <h3>Invoices by Channel <span className="card-hint">Click a bar to filter</span></h3>
                 <BarChart bars={bars} onBarClick={(key) => dispatch(setInvoiceFilterChannel(invoiceFilterChannel === key ? null : key))} activeKey={invoiceFilterChannel} />
               </div>
             )}
-            <div className="card" style={{ flex: 1, minWidth: 220, textAlign: 'center' }}>
-              <h3 style={{ textAlign: 'left' }}>Status Breakdown <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11.5 }}>(click to filter)</span></h3>
+            <div className="card">
+              <h3>Status Breakdown <span className="card-hint">Click a status to filter</span></h3>
               <DonutChart segments={segments} total={invoices.length} onSegmentClick={(key) => dispatch(setInvoiceFilterStatus(key))} activeKey={invoiceFilterStatus} />
             </div>
           </div>
@@ -80,7 +101,7 @@ export default function InvoicesPage() {
                 </button>
               ))}
               {invoiceFilterStatus && (
-                <button type="button" className="tab active" style={{ marginLeft: 'auto', background: 'var(--amber-bg)', color: 'var(--amber)' }} onClick={() => dispatch(setInvoiceFilterStatus(invoiceFilterStatus))}>
+                <button type="button" className="tab active filter-clear" style={{ marginLeft: 'auto' }} onClick={() => dispatch(setInvoiceFilterStatus(invoiceFilterStatus))}>
                   Status: {invoiceFilterStatus} ✕
                 </button>
               )}
