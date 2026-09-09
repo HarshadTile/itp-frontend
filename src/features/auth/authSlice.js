@@ -55,10 +55,14 @@ const authSlice = createSlice({
     logout(state) {
       Object.assign(state, initialState, { loggedIn: false });
     },
+    // Apply the auth object returned by POST /api/login or GET /api/me.
+    setAuthFromServer(state, action) {
+      Object.assign(state, action.payload, { loggedIn: true });
+    },
   },
 });
 
-export const { loginInternal, loginSupplier, switchIdentity, logout } = authSlice.actions;
+export const { loginInternal, loginSupplier, switchIdentity, logout, setAuthFromServer } = authSlice.actions;
 export default authSlice.reducer;
 
 /* ---- selectors ---- */

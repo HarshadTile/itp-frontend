@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginInternal, loginSupplier } from '../features/auth/authSlice';
+import { loginThunk } from '../features/bootstrap/hydrateThunks';
 import { pushToast } from '../features/ui/uiSlice';
 import { SUPPLIERS } from '../data/invoices';
 import { vendorCodesFor, panFor } from '../utils/businessLogic';
 import logo from '../assets/mahindra-logo.png';
-
-// Demo credentials for the internal team login. In a real deployment this would be SSO.
-const DEMO_USER = { username: 'admin', password: 'admin123' };
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -20,29 +17,41 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   // Supplier fields
   const [company, setCompany] = useState(SUPPLIERS[0]);
   const [vcode, setVcode] = useState(vendorCodesFor(SUPPLIERS[0])[0]);
   const [phone, setPhone] = useState('');
 
-  function submitInternal(e) {
+  async function submitInternal(e) {
     e.preventDefault();
-    if (username.trim().toLowerCase() !== DEMO_USER.username || password !== DEMO_USER.password) {
-      setError('Invalid username or password. Use the demo credentials shown below.');
-      return;
-    }
     setError('');
-    dispatch(loginInternal({ channelScope }));
-    dispatch(pushToast('Signed in.'));
-    navigate('/app/invoices');
+    setBusy(true);
+    try {
+      await dispatch(loginThunk({ mode: 'internal', username: username.trim(), password, channelScope }));
+      dispatch(pushToast('Signed in.'));
+      navigate('/app/invoices');
+    } catch (err) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function submitSupplier(e) {
+  async function submitSupplier(e) {
     e.preventDefault();
-    dispatch(loginSupplier({ supplier: company, vcode }));
-    dispatch(pushToast('Signed in.'));
-    navigate('/supplier/home');
+    setError('');
+    setBusy(true);
+    try {
+      await dispatch(loginThunk({ mode: 'supplier', company, vcode, phone }));
+      dispatch(pushToast('Signed in.'));
+      navigate('/supplier/home');
+    } catch (err) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function onCompanyChange(e) {
@@ -81,12 +90,13 @@ export default function LoginPage() {
               <label>Password</label>
               <input type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
-            <button type="submit" className="btn primary" style={{ width: '100%', justifyContent: 'center', padding: 12 }}>Login</button>
+            <button type="submit" className="btn primary" disabled={busy} style={{ width: '100%', justifyContent: 'center', padding: 12 }}>{busy ? 'Signing in…' : 'Login'}</button>
             <p className="login-hint">Pick your portal first. A team logged in against one portal only ever sees that portal's own data.</p>
             <p className="login-hint">Demo login — username <b>admin</b>, password <b>admin123</b></p>
           </form>
         ) : (
           <form onSubmit={submitSupplier}>
+            {error && <div className="login-error">{error}</div>}
             <div className="form-field">
               <label>Company / PAN</label>
               <select value={company} onChange={onCompanyChange}>
@@ -104,7 +114,7 @@ export default function LoginPage() {
               <input type="tel" placeholder="Enter 10-digit mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <p className="login-hint" style={{ marginTop: -8 }}>OTP will be sent to this number.</p>
-            <button type="submit" className="btn primary" style={{ width: '100%', justifyContent: 'center', padding: 12 }}>Login</button>
+            <button type="submit" className="btn primary" disabled={busy} style={{ width: '100%', justifyContent: 'center', padding: 12 }}>{busy ? 'Signing in…' : 'Login'}</button>
             <p className="login-hint">Pick your company/PAN, then the one vendor code you log in as. That code can carry several purchase orders. Your view only ever shows this code's own POs, never a sibling code's.</p>
           </form>
         )}

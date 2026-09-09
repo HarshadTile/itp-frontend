@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CHANNELS, LOGIN_CHANNELS, CHANNEL_LABEL } from '../../data/constants';
 import { toggleNavExpanded } from '../../features/ui/uiSlice';
-import { logout } from '../../features/auth/authSlice';
+import { logoutThunk } from '../../features/bootstrap/hydrateThunks';
 import logo from '../../assets/mahindra-logo.png';
 
 function NavItem({ icon, label, active, badge, onClick, hasChildren, open }) {
@@ -42,7 +42,7 @@ export default function Sidebar() {
         </nav>
         <div className="nav-bottom">
           <NavItem icon="◍" label="My Profile" active={isActive('/supplier/profile')} onClick={() => navigate('/supplier/profile')} />
-          <NavItem icon="⎋" label="Logout" onClick={() => { dispatch(logout()); navigate('/login'); }} />
+          <NavItem icon="⎋" label="Logout" onClick={() => { dispatch(logoutThunk()); navigate('/login'); }} />
         </div>
       </aside>
     );
@@ -109,7 +109,7 @@ export default function Sidebar() {
           </>
         )}
         <NavItem icon="◍" label="Profile" active={isActive('/app/profile')} onClick={() => navigate('/app/profile')} />
-        <NavItem icon="⎋" label="Logout" onClick={() => { dispatch(logout()); navigate('/login'); }} />
+        <NavItem icon="⎋" label="Logout" onClick={() => { dispatch(logoutThunk()); navigate('/login'); }} />
       </div>
     </aside>
   );
