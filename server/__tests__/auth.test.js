@@ -1,0 +1,76 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import request from 'supertest';
+import { seedAll } from '../seed.js';
+import { createApp } from '../index.js';
+import { query, closePools } from '../db.js';
+
+let app;
+beforeAll(async () => {
+  await seedAll();
+  app = createApp();
+});
+afterAll(async () => { await closePools(); });
+
+describe('auth', () => {
+  it('logs in with correct internal credentials', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ mode: 'internal', username: 'admin', password: 'admin123', channelScope: 'all' });
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBeTruthy();
+    expect(res.body.auth.authType).toBe('internal');
+    expect(res.body.auth.role).toBe('Admin');
+    expect(res.body.auth.currentUser.email).toBe('r.kulkarni@company.com');
+  });
+
+  it('maps the internalTeam scope to the MDE Invoice Team role', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ mode: 'internal', username: 'priya', password: 'priya123', channelScope: 'internalTeam' });
+    expect(res.status).toBe(200);
+    expect(res.body.auth.channelScope).toBe('internalTeam');
+    expect(res.body.auth.role).toBe('MDE Invoice Team');
+  });
+
+  it('rejects a wrong password and creates no session', async () => {
+    const [{ n: before }] = await query('SELECT COUNT(*) AS n FROM sessions');
+    const res = await request(app)
+      .post('/api/login')
+      .send({ mode: 'internal', username: 'admin', password: 'nope' });
+    expect(res.status).toBe(401);
+    const [{ n: after }] = await query('SELECT COUNT(*) AS n FROM sessions');
+    expect(after).toBe(before);
+  });
+
+  it('GET /api/me works with a valid token and 401s without one', async () => {
+    const login = await request(app)
+      .post('/api/login')
+      .send({ mode: 'internal', username: 'admin', password: 'admin123' });
+    const ok = await request(app).get('/api/me').set('Authorization', `Bearer ${login.body.token}`);
+    expect(ok.status).toBe(200);
+    expect(ok.body.auth.role).toBe('Admin');
+
+    const no = await request(app).get('/api/me');
+    expect(no.status).toBe(401);
+  });
+
+  it('logout deletes the session so the token stops working', async () => {
+    const login = await request(app)
+      .post('/api/login')
+      .send({ mode: 'internal', username: 'admin', password: 'admin123' });
+    const token = login.body.token;
+    await request(app).post('/api/logout').set('Authorization', `Bearer ${token}`).expect(200);
+    await request(app).get('/api/me').set('Authorization', `Bearer ${token}`).expect(401);
+  });
+
+  it('supplier login needs no password and returns a scoped vendor code', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ mode: 'supplier', company: 'Tata Communications Ltd' });
+    expect(res.status).toBe(200);
+    expect(res.body.auth.authType).toBe('supplier');
+    expect(res.body.auth.supplierQuery).toBe('Tata Communications Ltd');
+    expect(res.body.auth.supplierLoginVcode).toBeTruthy();
+    expect(res.body.auth.supplierPAN).toMatch(/^[A-Z]{5}\d{4}[A-Z]$/);
+  });
+});
