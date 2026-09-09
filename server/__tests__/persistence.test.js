@@ -26,7 +26,7 @@ describe('persistence', () => {
     expect(res.body.invoices.length).toBeGreaterThanOrEqual(19);
     expect(res.body.tickets.length).toBeGreaterThanOrEqual(4);
     expect(res.body.tickets[0]).toHaveProperty('comments');
-    expect(res.body.tables['settings-users'].length).toBe(4);
+    expect(res.body.tables['settings-users'].length).toBeGreaterThanOrEqual(4);
     expect(res.body.settings.roleMatrix.Admin.manageUsers).toBe(true);
     expect(res.body.ticketSeq).toBeGreaterThanOrEqual(1004);
   });

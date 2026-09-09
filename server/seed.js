@@ -6,11 +6,20 @@ import { stageIndexFor } from './stageIndex.js';
 import { INVOICE_DATA, SYNC_LOG } from '../src/data/invoices.js';
 import { INITIAL_TICKETS } from '../src/data/tickets.js';
 import { ROLE_MATRIX } from '../src/data/constants.js';
+import {
+  buildExtraInvoices, buildExtraUsers, buildExtraTickets, buildExtraSyncLog,
+} from './dummyData.js';
+
+// Hand-written rows + generated demo rows.
+const ALL_INVOICES = [...INVOICE_DATA, ...buildExtraInvoices()];
+const ALL_TICKETS = [...INITIAL_TICKETS, ...buildExtraTickets(ALL_INVOICES)];
+const ALL_SYNC = [...SYNC_LOG, ...buildExtraSyncLog()];
 
 // Login accounts. Passwords are bcrypt-hashed on insert.
 const USERS = [
   ['admin', 'admin123', 'Ravi Kulkarni', 'r.kulkarni@company.com', 'Admin', 'Procurement', 'MDE Invoice Lead'],
   ['priya', 'priya123', 'Priya Deshmukh', 'p.deshmukh@company.com', 'MDE Invoice Team', 'Procurement', 'Invoice Processor'],
+  ...buildExtraUsers(),
 ];
 
 // Editable grids shown under Settings.
@@ -20,6 +29,11 @@ const TABLE_ROWS = {
     ['Priya Deshmukh', 'p.deshmukh@company.com', 'Invoice Processor', 'Procurement', 'MDE Invoice Team', 'Active'],
     ['Ajay Menon', 'a.menon@company.com', 'Category Approver', 'Sourcing', 'Approver', 'Active'],
     ['Neha Kulkarni', 'n.kulkarni@company.com', 'Accounts Executive', 'Finance', 'Accounts', 'Active'],
+    ['Anil Mehta', 'a.mehta@company.com', 'Category Approver', 'Sourcing', 'Approver', 'Active'],
+    ['Vijay Nair', 'v.nair@company.com', 'Accounts Executive', 'Finance', 'Accounts', 'Active'],
+    ['Kiran Shah', 'k.shah@company.com', 'Accounts Executive', 'Finance', 'Accounts', 'Active'],
+    ['Sneha Iyer', 's.iyer@company.com', 'Category Approver', 'Sourcing', 'Approver', 'Active'],
+    ['Ramesh Rao', 'r.rao@company.com', 'Coordinator', 'Procurement', 'Viewer', 'Inactive'],
   ],
   'settings-notifications': [
     ['Invoice Uploaded', 'Internal, MDE Invoice Team', '-', 'On'],
@@ -59,7 +73,7 @@ export async function seedAll() {
     );
   }
 
-  for (const i of INVOICE_DATA) {
+  for (const i of ALL_INVOICES) {
     await query(
       `INSERT INTO invoices (no,vcode,vendor,channel,po,amount,status,utr,date,short_pay_reason,stage_index)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -68,7 +82,7 @@ export async function seedAll() {
     );
   }
 
-  for (const t of INITIAL_TICKETS) {
+  for (const t of ALL_TICKETS) {
     await query(
       `INSERT INTO tickets (id,no,category,description,status,priority,assignee,raised_by,raised_date,sla_hours,resolved_date)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -105,7 +119,7 @@ export async function seedAll() {
     [JSON.stringify(ROLE_MATRIX), 0, 'i2ptracker@company.com'],
   );
 
-  for (const s of SYNC_LOG) {
+  for (const s of ALL_SYNC) {
     await query(
       'INSERT INTO sync_log (channel,time,status,records,msg) VALUES (?,?,?,?,?)',
       [s.channel, s.time, s.status, s.records, s.msg],
