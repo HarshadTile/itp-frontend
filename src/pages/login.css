@@ -4,8 +4,7 @@
    ============================================================ */
 
 .lgn-page {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #F1F2F5;
@@ -54,12 +53,10 @@
 /* ---------------- Hero ---------------- */
 .lgn-hero {
   flex: 1;
-  min-height: 0;
   position: relative;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   background: var(--brand);
-  overflow: hidden;
 }
 .lgn-hero::before {
   /* premium depth without a loud gradient */
@@ -87,6 +84,7 @@
 .lgn-hero-left {
   position: relative;
   z-index: 1;
+  overflow: hidden;
   color: #fff;
   padding: clamp(32px, 5vw, 68px);
   display: flex;
@@ -131,15 +129,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px clamp(24px, 4vw, 56px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, .45) transparent;
-}
-.lgn-hero-right::-webkit-scrollbar { width: 8px; }
-.lgn-hero-right::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, .4);
-  border-radius: 4px;
+  padding: 24px clamp(24px, 4vw, 56px);
 }
 
 /* ---------------- Login card ---------------- */
