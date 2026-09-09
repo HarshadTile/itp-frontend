@@ -24,13 +24,16 @@ SQL database and a genuine login → logout flow. The client should be able to:
 
 ## Architecture
 
-New `server/` directory — an Express API with a SQLite database file, run
-alongside Vite in development.
+New `server/` directory — an Express API backed by a **local MySQL** database
+(`mahindra_i2p`), run alongside Vite in development. Target server: MySQL 9.7 on
+`localhost:3306` (already installed and running on this machine).
 
 ```
 server/
-  db.js            better-sqlite3 connection + schema (CREATE TABLE IF NOT EXISTS)
-  seed.js          idempotent seed FROM the existing src/data/* files
+  .env             DB_HOST/PORT/USER/PASSWORD/NAME + PORT (git-ignored)
+  db.js            mysql2/promise connection pool, reads server/.env via dotenv
+  schema.sql       CREATE DATABASE IF NOT EXISTS + all CREATE TABLE statements
+  seed.js          creates schema, then idempotent seed FROM the existing src/data/* files
   auth.js          bcrypt password check, session-token creation, requireAuth middleware
   routes/
     auth.js        POST /api/login, POST /api/logout, GET /api/me
@@ -47,8 +50,10 @@ server/
 ### Dependencies (new)
 
 - `express` — API server
-- `better-sqlite3` — synchronous SQLite driver (simple, fast, no async ceremony)
+- `mysql2` — MySQL driver (promise API, connection pooling)
+- `dotenv` — load `server/.env`
 - `bcryptjs` — password hashing (pure JS, no native build friction on Windows)
+- `cors` — allow the Vite dev origin during development
 - `concurrently` (dev) — run server + Vite with one command
 
 ### Scripts (`package.json`)
@@ -68,22 +73,29 @@ server: { proxy: { '/api': 'http://localhost:3001' } }
 
 ## Database schema
 
-SQLite file at `server/i2p.db` (git-ignored). Schema created on server start if
-absent; `seed.js` fills it from the current `src/data/*` content so the demo
-opens with exactly today's data.
+MySQL database `mahindra_i2p` on `localhost:3306`. `server/schema.sql` runs
+`CREATE DATABASE IF NOT EXISTS mahindra_i2p` then all `CREATE TABLE IF NOT
+EXISTS` statements (InnoDB, `utf8mb4`). `seed.js` runs the schema, then fills
+every table from the current `src/data/*` content — using `INSERT ... ON
+DUPLICATE KEY UPDATE` / `TRUNCATE`-then-insert so re-running is idempotent. The
+demo opens with exactly today's data. The existing `duroshox*` databases on this
+server are untouched.
 
 | Table | Columns (summary) |
 |---|---|
-| `users` | id, username UNIQUE, password_hash, name, email, role, dept, title, status |
-| `sessions` | token PK, user_id NULL, auth_type, scope_json, supplier_json, created_at |
-| `invoices` | no PK, vcode, vendor, channel, po, amount, status, utr, date, short_pay_reason, stage_index |
-| `tickets` | id PK, no, category, description, status, priority, assignee, raised_by, raised_date, sla_hours, resolved_date |
-| `ticket_comments` | id PK, ticket_id FK, author, role, date, text |
-| `ticket_activity` | id PK, ticket_id FK, date, text |
-| `table_rows` | key, row_index, cells_json — PRIMARY KEY (key, row_index); backs Users / Notification Rules / Audit editable tables |
-| `settings` | id=1 single row: role_matrix_json, two_factor, sender_email |
-| `sync_log` | id PK, channel, time, status, records, msg |
-| `integrations` | id PK, name, status, last_sync |
+| `users` | id INT AI PK, username VARCHAR UNIQUE, password_hash, name, email, role, dept, title, status |
+| `sessions` | token CHAR(36) PK, user_id INT NULL FK, auth_type ENUM('internal','supplier'), scope_json JSON, supplier_json JSON, created_at DATETIME |
+| `invoices` | no VARCHAR PK, vcode, vendor, channel, po, amount, status, utr, date, short_pay_reason TEXT, stage_index INT |
+| `tickets` | id VARCHAR PK, no, category, description TEXT, status, priority, assignee, raised_by, raised_date, sla_hours INT, resolved_date |
+| `ticket_comments` | id INT AI PK, ticket_id VARCHAR FK, author, role, date, text TEXT |
+| `ticket_activity` | id INT AI PK, ticket_id VARCHAR FK, date, text TEXT |
+| `table_rows` | table_key VARCHAR, row_index INT, cells_json JSON — PRIMARY KEY (table_key, row_index); backs Users / Notification Rules / Audit editable tables |
+| `settings` | id TINYINT PK (always 1), role_matrix_json JSON, two_factor TINYINT, sender_email VARCHAR |
+| `sync_log` | id INT AI PK, channel, time, status, records INT, msg TEXT |
+| `integrations` | id INT AI PK, name, status, last_sync |
+
+`ticket_comments` / `ticket_activity` have `ON DELETE CASCADE` FKs to `tickets`.
+`sessions.user_id` is `ON DELETE SET NULL` (supplier sessions have no user row).
 
 `stage_index` on `invoices` is new: it lets Approver Assignment / SAP Booking /
 Payment & UTR stage moves persist. Seed value derived from current `status` via
@@ -228,9 +240,11 @@ login → back button does not re-enter the app.
 
 ## Rollout notes
 
-- This project is **not a git repository** (`git init` not run). The design doc
-  cannot be committed. If the client wants version control, run `git init` first.
-- `server/i2p.db` and `server/*.db-journal` added to `.gitignore`.
-- Windows: `better-sqlite3` ships prebuilt binaries for current Node LTS; if the
-  install fails, fall back to `node:sqlite` (Node 22+, built-in) — same API
-  surface for our usage. `bcryptjs` is pure JS, no build step.
+- Repo is now under git; pushed to `origin/frontend`.
+- `server/.env` added to `.gitignore`. A committed `server/.env.example` documents
+  the required keys with placeholder values.
+- MySQL must be running before `npm run seed` / `npm run server`. Connection
+  target: `localhost:3306`, database `mahindra_i2p` (created by the seed script).
+- `mysql2` and `bcryptjs` are pure JS — no native build step on Windows.
+- If the seed cannot connect, it exits with a clear message pointing at
+  `server/.env`.
