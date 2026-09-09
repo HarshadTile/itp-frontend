@@ -100,6 +100,16 @@
 }
 
 .lgn-auth-head { margin-bottom: 24px; }
+.lgn-auth-logo {
+  height: 30px;
+  width: auto;
+  display: block;
+  margin-bottom: 18px;
+}
+/* on mobile the brand panel is hidden — give the mark a touch more presence */
+@media (max-width: 900px) {
+  .lgn-auth-logo { height: 34px; margin-bottom: 22px; }
+}
 .lgn-auth-head h1 {
   font-family: var(--font-display);
   font-size: 24px;

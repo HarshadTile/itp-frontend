@@ -141,6 +141,7 @@ export default function LoginPage() {
       <main className="lgn-auth">
         <div className="lgn-auth-inner">
           <div className="lgn-auth-head">
+            <img className="lgn-auth-logo" src={logo} alt="Mahindra" />
             <h1>Welcome back</h1>
             <p>Sign in to continue</p>
           </div>
