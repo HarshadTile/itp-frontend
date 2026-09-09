@@ -5,13 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node server/index.js",
+    "seed": "node server/seed.js",
+    "dev:all": "concurrently -n api,web -c blue,green \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:server": "vitest run -c vitest.server.config.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "mysql2": "^3.24.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-redux": "^9.3.0",
@@ -24,8 +33,10 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^9.2.4",
     "jsdom": "^30.0.1",
     "oxlint": "^1.79.0",
+    "supertest": "^7.2.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
   }
