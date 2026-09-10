@@ -8,9 +8,12 @@ export default function AppLayout() {
     <div className="app-shell">
       <Sidebar />
       <div className="main">
-        <Topbar />
-        <div id="content">
-          <Outlet />
+        {/* single scroll area: the top bar sticks, the page content scrolls under it */}
+        <div className="main-scroll">
+          <Topbar />
+          <div id="content">
+            <Outlet />
+          </div>
         </div>
       </div>
       <ModalHost />
