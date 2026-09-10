@@ -269,12 +269,30 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 
 /* two fixed-height chart cards — bounded so data volume can't distort them */
 .chart-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:12px;align-items:stretch;}
-.chart-card{padding:14px 16px;display:flex;flex-direction:column;height:200px;overflow:hidden;}
+.chart-card{padding:14px 16px;display:flex;flex-direction:column;height:200px;position:relative;overflow:visible;}
 .chart-card h3{margin-bottom:10px;flex-shrink:0;}
 .chart-card > .donut-wrap,
 .chart-card > .hbar-list{flex:1;min-height:0;}
-.chart-card > .hbar-list{overflow-y:auto;justify-content:center;}
+.chart-card > .hbar-list{overflow-y:auto;overflow-x:hidden;justify-content:center;}
 .chart-card > .donut-wrap{align-items:center;justify-content:center;}
+
+/* hover detail tip — sits inside the card, top-right */
+.chart-tip{
+  position:absolute;top:8px;right:10px;z-index:6;
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  max-width:64%;
+  padding:6px 10px;border-radius:8px;
+  background:#1F2126;color:#fff;
+  font-size:11.5px;line-height:1.35;
+  box-shadow:0 8px 24px rgba(20,4,10,.24);
+  pointer-events:none;
+  animation:chart-tip-in .12s ease both;
+}
+.chart-tip b{font-weight:700;}
+.chart-tip span{opacity:.85;}
+.chart-tip-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
+@keyframes chart-tip-in{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:none;}}
+.hbar-row.hi{background:var(--gray-bg);}
 
 .recent-card{padding:14px 16px;}
 .recent-card h3{margin-bottom:10px;}
@@ -383,15 +401,14 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 
 /* donut (Invoices by Channel) */
 .donut-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;}
-.donut{
-  width:112px;height:112px;flex-shrink:0;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;position:relative;
+.donut-fig{position:relative;width:112px;height:112px;flex-shrink:0;}
+.donut-svg{width:100%;height:100%;display:block;}
+.donut-svg circle{cursor:default;}
+.donut-center{
+  position:absolute;inset:0;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;line-height:1.05;pointer-events:none;
 }
-.donut::after{
-  content:'';position:absolute;width:74px;height:74px;border-radius:50%;
-  background:var(--card);box-shadow:inset 0 0 0 1px var(--border-soft);
-}
-.donut-center{position:relative;z-index:1;text-align:center;line-height:1.05;}
 .donut-num{display:block;font-family:var(--font-display);font-weight:700;font-size:21px;color:var(--ink);}
 .donut-lbl{display:block;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
 .donut-legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:1px;}
@@ -399,7 +416,9 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
   display:flex;align-items:center;gap:8px;width:100%;
   padding:4px 6px;border:none;background:none;border-radius:6px;
   font-size:12px;color:var(--text-body);text-align:left;cursor:default;
+  transition:background .12s ease;
 }
+.legend-row.hi{background:var(--gray-bg);}
 .legend-row .legend-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .legend-row .legend-val{font-family:var(--font-display);font-weight:700;font-size:12px;color:var(--ink);}
 .legend-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
