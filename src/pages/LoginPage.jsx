@@ -161,6 +161,8 @@ export default function LoginPage() {
               </form>
             ) : (
               <form className="lgn-form" onSubmit={submitSupplier} noValidate>
+                {/* keeps the card the same height as the Internal Team tab (which has an extra Portal/Team field) */}
+                <div className="lgn-form-spacer" aria-hidden="true" />
                 <FormField
                   id="lgn-vcode"
                   label="Vendor Code"

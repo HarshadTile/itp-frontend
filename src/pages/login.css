@@ -214,14 +214,10 @@
 }
 
 /* fields */
-.lgn-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  /* reserve the taller (Internal Team) form's height so the card — and the
-     Login button / footer — don't jump when switching to the Supplier tab */
-  min-height: var(--lgn-form-min, 320px);
-}
+.lgn-form { display: flex; flex-direction: column; gap: 12px; }
+/* the Supplier tab has one field fewer than Internal Team — this invisible
+   spacer takes exactly one field's place so the card height never changes */
+.lgn-form-spacer { height: 67px; flex-shrink: 0; }
 .lgn-field { display: flex; flex-direction: column; gap: 6px; }
 .lgn-field label { font-size: 12.5px; font-weight: 600; color: #333A47; line-height: 1.2; }
 .lgn-label-row {
@@ -448,7 +444,8 @@
   .lgn-card-sub { font-size: 11.5px; }
   .lgn-seg { margin-bottom: 10px; }
   .lgn-seg button { padding: 8px; }
-  .lgn-form { gap: 9px; --lgn-form-min: 278px; }
+  .lgn-form { gap: 9px; }
+  .lgn-form-spacer { height: 62px; }
   .lgn-field { gap: 5px; }
   .lgn-input input, .lgn-input select { height: 42px; }
   .lgn-submit { height: 44px; margin-top: 2px; }
