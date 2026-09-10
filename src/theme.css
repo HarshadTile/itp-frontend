@@ -255,13 +255,12 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 
 /* dashboard grids */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:start;}
-.chart-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:16px;align-items:stretch;}
+.chart-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;margin-bottom:16px;align-items:stretch;}
 .chart-grid > .card:only-child{grid-column:1 / -1;}
 .chart-grid .card{padding:16px 18px;display:flex;flex-direction:column;}
 .chart-grid .card h3{margin-bottom:12px;flex-shrink:0;}
-/* bar track grows to fill the card so both chart cards are the same height */
-.chart-grid .barchart{height:auto;flex:1;min-height:130px;}
-.donut-wrap{flex:1;justify-content:center;}
+.chart-grid .card > .hbar-list,
+.chart-grid .card > .donut-wrap{flex:1;justify-content:center;}
 .kpi-grid .stat-card{min-width:0;}
 @media (max-width:1360px){.kpi-grid{gap:12px;}.chart-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;}}
 @media (max-width:1120px){.chart-grid{grid-template-columns:1fr;}}
@@ -332,42 +331,38 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 .check-toggle.on{background:var(--brand);border-color:var(--brand);}
 .check-toggle:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
 
-/* ---------- Charts (pure CSS) ---------- */
-.barchart{
-  display:flex;align-items:flex-end;gap:clamp(12px,3vw,32px);
-  height:138px;padding:12px 8px 0;
-  border-bottom:1px solid var(--border);
-  background:
-    linear-gradient(transparent 0 calc(25% - 1px), var(--border-soft) calc(25% - 1px) 25%, transparent 25%),
-    linear-gradient(transparent 0 calc(50% - 1px), var(--border-soft) calc(50% - 1px) 50%, transparent 50%),
-    linear-gradient(transparent 0 calc(75% - 1px), var(--border-soft) calc(75% - 1px) 75%, transparent 75%);
-}
-.barchart .bar-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;background:none;border:none;padding:0;cursor:pointer;min-width:0;}
-.barchart .bar-wrap:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px;}
-.barchart .bar{
-  width:min(52px,72%);
-  background:#DADCE2;
-  border-radius:5px 5px 0 0;min-height:4px;
-  transition:background .16s ease,filter .16s ease;
-}
-.barchart .bar-wrap:hover .bar{filter:brightness(.94);}
-.barchart .bar.active{background:var(--brand);}
-.barchart .bar-val{font-size:12px;color:var(--ink);font-weight:700;font-family:var(--font-display);}
-.barchart .bar-lbl{font-size:11px;color:var(--text-muted);text-align:center;line-height:1.3;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
-.barchart + .bar-legend{margin-top:8px;}
+/* ---------- Charts ---------- */
 
-.donut-wrap{display:flex;flex-direction:column;align-items:center;}
-.donut{width:116px;height:116px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
-.donut::after{content:'';width:78px;height:78px;background:var(--card);border-radius:50%;position:absolute;box-shadow:inset 0 0 0 1px var(--border-soft);}
-.donut-center{position:relative;z-index:1;text-align:center;line-height:1.1;}
-.donut-num{display:block;font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--ink);}
-.donut-lbl{display:block;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:1px;}
-.donut-legend{
-  margin-top:10px;width:100%;
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:0 10px;
+/* horizontal bar list (Invoices by Channel) */
+.hbar-list{display:flex;flex-direction:column;gap:4px;}
+.hbar-row{
+  display:grid;grid-template-columns:120px 1fr 34px;align-items:center;gap:12px;
+  width:100%;padding:7px 8px;border:none;background:none;border-radius:8px;
+  cursor:pointer;text-align:left;transition:background .14s ease;
 }
-@media (max-width:1120px){.donut-legend{grid-template-columns:1fr;max-width:280px;margin-inline:auto;}}
+.hbar-row:hover{background:var(--gray-bg);}
+.hbar-row:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}
+.hbar-label{font-size:12.5px;color:var(--text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hbar-track{height:10px;background:#EDEEF1;border-radius:999px;overflow:hidden;}
+.hbar-fill{display:block;height:100%;background:#C7CBD3;border-radius:999px;transition:width .3s ease,background .16s ease;}
+.hbar-row:hover .hbar-fill{background:#B7BCC6;}
+.hbar-row.active .hbar-label{color:var(--brand-dark);font-weight:600;}
+.hbar-row.active .hbar-fill{background:var(--brand);}
+.hbar-val{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--ink);text-align:right;}
+
+/* donut + legend side by side */
+.donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;flex:1;}
+.donut{width:116px;height:116px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+.donut::after{content:'';width:76px;height:76px;background:var(--card);border-radius:50%;position:absolute;box-shadow:inset 0 0 0 1px var(--border-soft);}
+.donut-center{position:relative;z-index:1;text-align:center;line-height:1.05;}
+.donut-num{display:block;font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--ink);}
+.donut-lbl{display:block;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+.donut-legend{
+  flex:1;min-width:180px;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 8px;
+}
+@media (max-width:1240px){.donut-legend{grid-template-columns:1fr;min-width:0;}}
 .legend-dot{width:8px;height:8px;border-radius:3px;display:inline-block;margin-right:8px;flex-shrink:0;}
 .legend-row{padding:3px 7px;border-radius:6px;transition:background .12s;cursor:pointer;background:none;border:none;display:flex;align-items:center;min-width:0;text-align:left;font-size:11.5px;color:var(--text-body);}
 .legend-row .legend-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

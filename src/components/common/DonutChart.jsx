@@ -15,7 +15,7 @@ export default function DonutChart({ segments, total, onSegmentClick, activeKey 
       >
         <span className="donut-center">
           <span className="donut-num">{total}</span>
-          <span className="donut-lbl">Total Invoices</span>
+          <span className="donut-lbl">Total</span>
         </span>
       </div>
       <div className="donut-legend">
