@@ -4,6 +4,7 @@ import { currentHandlerFor, currentStageName } from '../../utils/businessLogic';
 import { setSearch, setTablePage, toggleSelectRow, setSelectAll, clearSelection, openModal, pushToast } from '../../features/ui/uiSlice';
 import Badge from '../common/Badge.jsx';
 import PagerFoot from '../common/PagerFoot.jsx';
+import { Mail, Flag, Eye, Download, Inbox } from '../common/icons.jsx';
 
 const PAGE_SIZE = 10;
 const EMPTY_SELECTION = Object.freeze([]);
@@ -59,11 +60,11 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
         <div className="toolbar-right">
           {bulk && selected.length > 0 ? (
             <>
-              <button type="button" className="btn" onClick={() => { dispatch(pushToast(`Status email sent for ${selected.length} invoice${selected.length === 1 ? '' : 's'}.`)); dispatch(clearSelection(tableKey)); }}>✉ Notify Selected</button>
-              <button type="button" className="btn" onClick={() => dispatch(pushToast(`Exporting ${selected.length} invoice${selected.length === 1 ? '' : 's'} to Excel...`))}>⬇ Export Selected</button>
+              <button type="button" className="btn" onClick={() => { dispatch(pushToast(`Status email sent for ${selected.length} invoice${selected.length === 1 ? '' : 's'}.`)); dispatch(clearSelection(tableKey)); }}><Mail />Notify Selected</button>
+              <button type="button" className="btn" onClick={() => dispatch(pushToast(`Exporting ${selected.length} invoice${selected.length === 1 ? '' : 's'} to Excel...`))}><Download />Export Selected</button>
             </>
           ) : (
-            <button type="button" className="btn" onClick={() => dispatch(pushToast('Exporting all invoices to Excel...'))}>⬇ Export All</button>
+            <button type="button" className="btn" onClick={() => dispatch(pushToast('Exporting all invoices to Excel...'))}><Download />Export All</button>
           )}
         </div>
       </div>
@@ -86,7 +87,13 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
           </thead>
           <tbody>
             {pageRows.length === 0 && (
-              <tr><td colSpan={bulk ? 15 : 14} style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 24 }}>No invoices match your search.</td></tr>
+              <tr><td colSpan={bulk ? 15 : 14}>
+                <div className="empty-state">
+                  <Inbox />
+                  <b>No invoices found</b>
+                  <span>Try changing your search or filters.</span>
+                </div>
+              </td></tr>
             )}
             {pageRows.map((inv) => {
               const owner = currentHandlerFor(inv);
@@ -111,9 +118,9 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
                   </td>
                   <td>{inv.utr === '-' ? <span style={{ color: '#CBD5E1' }}>Not yet visible</span> : inv.utr}</td>
                   <td>{inv.date}</td>
-                  <td><button type="button" className="kebab" title="Notify Supplier: preview To / CC" onClick={() => openNotify(inv.no)}>✉</button></td>
-                  <td><button type="button" className="kebab" title="Raise a query on this invoice" onClick={() => openRaiseTicket(inv.no)}>⚑</button></td>
-                  <td><button type="button" className="kebab" title={title} onClick={() => openInvoice(inv.no)}>👁</button></td>
+                  <td><button type="button" className="kebab" title="Notify Supplier: preview To / CC" aria-label="Notify supplier" onClick={() => openNotify(inv.no)}><Mail /></button></td>
+                  <td><button type="button" className="kebab" title="Raise a query on this invoice" aria-label="Raise a query on this invoice" onClick={() => openRaiseTicket(inv.no)}><Flag /></button></td>
+                  <td><button type="button" className="kebab" title={title} aria-label="View invoice" onClick={() => openInvoice(inv.no)}><Eye /></button></td>
                 </tr>
               );
             })}

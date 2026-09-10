@@ -4,6 +4,7 @@ import { deleteRow } from '../../features/tables/tablesSlice';
 import { pushToast } from '../../features/ui/uiSlice';
 import PagerFoot from '../common/PagerFoot.jsx';
 import Badge from './Badge.jsx';
+import { Upload, Download, Plus, Inbox, Mail, Edit, Trash } from './icons.jsx';
 
 const PAGE_SIZE = 20;
 
@@ -45,12 +46,12 @@ export default function EditableTable({
         <div className="toolbar-right">
           {canImportExport && (
             <>
-              <button type="button" className="btn" disabled={!canEdit} title={!canEdit ? 'Not permitted for your role' : undefined} onClick={() => dispatch(openModal({ kind: 'import', ctx: { tableKey } }))}>⬆ Import</button>
-              <button type="button" className="btn" onClick={() => dispatch(openModal({ kind: 'export', ctx: { tableKey, cols, rows, label: tableKey } }))}>⬇ Export</button>
+              <button type="button" className="btn" disabled={!canEdit} title={!canEdit ? 'Not permitted for your role' : undefined} onClick={() => dispatch(openModal({ kind: 'import', ctx: { tableKey } }))}><Upload />Import</button>
+              <button type="button" className="btn" onClick={() => dispatch(openModal({ kind: 'export', ctx: { tableKey, cols, rows, label: tableKey } }))}><Download />Export</button>
             </>
           )}
           {allowAdd && (
-            <button type="button" className="btn primary" disabled={!canEdit} title={!canEdit ? 'Not permitted for your role' : undefined} onClick={() => dispatch(openModal({ kind: 'row', ctx: { tableKey, cols, rows, idx: null } }))}>{addLabel}</button>
+            <button type="button" className="btn primary" disabled={!canEdit} title={!canEdit ? 'Not permitted for your role' : undefined} onClick={() => dispatch(openModal({ kind: 'row', ctx: { tableKey, cols, rows, idx: null } }))}><Plus />{addLabel.replace(/^\+\s*/, '')}</button>
           )}
         </div>
       </div>
@@ -70,7 +71,13 @@ export default function EditableTable({
           </thead>
           <tbody>
             {pageRows.length === 0 && (
-              <tr><td colSpan={cols.length + 1 + (statusCol ? 1 : 0)} style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 24 }}>No rows match your search.</td></tr>
+              <tr><td colSpan={cols.length + 1 + (statusCol ? 1 : 0)}>
+                <div className="empty-state">
+                  <Inbox />
+                  <b>Nothing to show</b>
+                  <span>{search ? 'No rows match your search.' : 'This table has no entries yet.'}</span>
+                </div>
+              </td></tr>
             )}
             {pageRows.map((r) => {
               const rowIdx = rows.indexOf(r);
@@ -81,21 +88,22 @@ export default function EditableTable({
                     if (statusCol && ci === vcodeIdx) return <td key={ci}><button type="button" className="link-hero" title={`Preview ${c}`} onClick={() => onViewVendorCode && onViewVendorCode(c)}>{c}</button></td>;
                     return <td key={ci}>{renderCell(c)}</td>;
                   })}
-                  {statusCol && <td><button type="button" className="kebab" title="Notify Supplier: preview To / CC" onClick={() => onNotify && onNotify(r[0])}>✉</button></td>}
-                  <td>
-                    <button type="button" className="kebab" disabled={!canEdit} title="Edit" onClick={() => dispatch(openModal({ kind: 'row', ctx: { tableKey, cols, rows, idx: rowIdx } }))}>✎</button>
+                  {statusCol && <td><button type="button" className="kebab" title="Notify Supplier: preview To / CC" aria-label="Notify supplier" onClick={() => onNotify && onNotify(r[0])}><Mail /></button></td>}
+                  <td style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" className="kebab" disabled={!canEdit} title="Edit" aria-label="Edit row" onClick={() => dispatch(openModal({ kind: 'row', ctx: { tableKey, cols, rows, idx: rowIdx } }))}><Edit /></button>
                     <button
                       type="button"
                       className="kebab"
                       disabled={!canEdit}
                       title="Delete"
+                      aria-label="Delete row"
                       onClick={() => {
                         if (window.confirm('Delete this row?')) {
                           dispatch(deleteRow({ key: tableKey, idx: rowIdx }));
                           dispatch(pushToast('Row deleted.'));
                         }
                       }}
-                    >🗑</button>
+                    ><Trash /></button>
                   </td>
                 </tr>
               );

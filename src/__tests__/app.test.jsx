@@ -226,7 +226,7 @@ describe('Internal admin - full navigation', () => {
     await user.click(screen.getByText('Settings'));
     await user.click(screen.getByText('Users'));
     const before = document.querySelectorAll('tbody tr').length;
-    await user.click(screen.getByRole('button', { name: '+ Add Row' }));
+    await user.click(screen.getByRole('button', { name: 'Add Row' }));
     const inputs = document.querySelectorAll('.modal-body input');
     for (const [i, input] of inputs.entries()) {
       fireEvent.change(input, { target: { value: `Test${i}` } });
@@ -257,7 +257,7 @@ describe('Internal admin - full navigation', () => {
   it('Outputs page: bulk export triggers a toast, no crash', async () => {
     const { user } = await loginAdmin();
     await user.click(screen.getByText('Vendor Status Reports'));
-    await user.click(screen.getByRole('button', { name: '⬇ Export All' }));
+    await user.click(screen.getByRole('button', { name: 'Export All' }));
     expect(await screen.findByText(/Exporting all invoices/)).toBeInTheDocument();
   });
 

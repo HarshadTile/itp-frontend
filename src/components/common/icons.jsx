@@ -27,3 +27,13 @@ export const LogOut = (p) => <Ic {...p} d={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 
 export const ChevronRight = (p) => <Ic {...p} d={<path d="m9 6 6 6-6 6" />} />;
 export const ChevronDown = (p) => <Ic {...p} d={<path d="m6 9 6 6 6-6" />} />;
 export const Eye = (p) => <Ic {...p} d={<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>} />;
+export const Mail = (p) => <Ic {...p} d={<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>} />;
+export const Flag = (p) => <Ic {...p} d={<><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z" /><path d="M4 22v-7" /></>} />;
+export const Download = (p) => <Ic {...p} d={<><path d="M12 3v12M7 11l5 5 5-5" /><path d="M5 21h14" /></>} />;
+export const Upload = (p) => <Ic {...p} d={<><path d="M12 21V9M7 13l5-5 5 5" /><path d="M5 3h14" /></>} />;
+export const Plus = (p) => <Ic {...p} d={<path d="M12 5v14M5 12h14" />} />;
+export const Filter = (p) => <Ic {...p} d={<path d="M3 5h18l-7 8v6l-4 2v-8z" />} />;
+export const X = (p) => <Ic {...p} d={<path d="M6 6l12 12M18 6 6 18" />} />;
+export const Inbox = (p) => <Ic {...p} d={<><path d="M4 13h4l2 3h4l2-3h4" /><path d="M4 13 6 5h12l2 8v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" /></>} />;
+export const Edit = (p) => <Ic {...p} d={<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>} />;
+export const Trash = (p) => <Ic {...p} d={<><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" /></>} />;
