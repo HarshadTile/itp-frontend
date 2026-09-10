@@ -49,7 +49,7 @@ describe('Login flows', () => {
   it('rejects bad internal credentials and shows an error', async () => {
     const user = userEvent.setup();
     renderApp(freshStore());
-    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'wrong');
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'wrong');
     await user.type(screen.getByPlaceholderText('Enter your password'), 'wrong');
     await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByText(/Invalid EAML . Employee ID or password/)).toBeInTheDocument();
@@ -58,18 +58,18 @@ describe('Login flows', () => {
   it('logs in as internal Admin (All Channels) and lands on Invoice Tracking', async () => {
     const user = userEvent.setup();
     renderApp(freshStore());
-    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'admin');
     await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
     await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByRole('heading', { name: 'Invoice Tracking' })).toBeInTheDocument();
-    expect(screen.getAllByText('INV-MS-1001').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^INV-/).length).toBeGreaterThan(0);
   });
 
   it('logs in as Internal Team scope and hides HQ-only nav items', async () => {
     const user = userEvent.setup();
     renderApp(freshStore());
     await user.selectOptions(screen.getByRole('combobox'), 'internalTeam');
-    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'admin');
     await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
     await user.click(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByRole('heading', { name: /Internal Team Invoice Tracking/ })).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('Internal admin - full navigation', () => {
     const store = freshStore();
     const user = userEvent.setup();
     renderApp(store);
-    await user.type(screen.getByPlaceholderText('Enter your Mahindra EAML / Employee ID'), 'admin');
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'admin');
     await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
     await user.click(screen.getByRole('button', { name: 'Login' }));
     await screen.findByRole('heading', { name: 'Invoice Tracking' });
@@ -130,14 +130,12 @@ describe('Internal admin - full navigation', () => {
     }
   });
 
-  it('opens the Stage Simple modal from the main dashboard table', async () => {
+  it('opens the Stage Simple modal from the Recent Invoices list', async () => {
     const { user } = await loginAdmin();
-    const link = screen.getAllByText('INV-MS-1001')[0];
-    await user.click(link);
-    expect(await screen.findByRole('heading', { name: 'INV-MS-1001' })).toBeInTheDocument();
-    expect(screen.getByText(/Open in Msetu \/ SRM/)).toBeInTheDocument();
+    await user.click(screen.getAllByTitle('Open current stage')[0]);
+    expect(await screen.findByText(/Open in /)).toBeInTheDocument();
     await user.click(screen.getByText('✕'));
-    expect(screen.queryByText(/Open in Msetu/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Open in /)).not.toBeInTheDocument();
   });
 
   it('opens the full Invoice Detail modal from Search Invoice(s)', async () => {

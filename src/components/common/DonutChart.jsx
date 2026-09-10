@@ -1,33 +1,44 @@
-/** Status breakdown as a horizontal bar list — matches BarChart's form.
- *  Kept the filename/export so callers don't change; it is no longer a donut. */
+/** Compact donut with an inline legend. Click a segment/row to filter. */
 export default function DonutChart({ segments, total, onSegmentClick, activeKey }) {
-  const max = Math.max(...segments.map((s) => s.value), 1);
+  const sum = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const stops = [];
+  segments.reduce((offset, s) => {
+    const end = offset + (s.value / sum) * 100;
+    stops.push(`${s.color} ${offset}% ${end}%`);
+    return end;
+  }, 0);
   return (
-    <div className="hbar-list status-bars">
-      <div className="hbar-total">{total} total</div>
-      {segments.map((s) => {
-        const pct = total ? Math.round((s.value / total) * 100) : 0;
-        const w = Math.max(Math.round((s.value / max) * 100), 2);
-        const active = activeKey === s.key;
-        return (
-          <button
-            type="button"
-            key={s.key}
-            className={`hbar-row${active ? ' active' : ''}`}
-            onClick={onSegmentClick ? () => onSegmentClick(s.key) : undefined}
-            title={`${s.value} invoices (${pct}%): click to filter`}
-          >
-            <span className="hbar-label">
-              <span className="hbar-dot" style={{ background: s.color }} />
-              {s.label}
-            </span>
-            <span className="hbar-track">
-              <span className="hbar-fill" style={{ width: `${w}%`, background: s.color }} />
-            </span>
-            <span className="hbar-val">{s.value} <span className="hbar-pct">· {pct}%</span></span>
-          </button>
-        );
-      })}
+    <div className="donut-wrap">
+      <div
+        className="donut"
+        style={{ background: `conic-gradient(${stops.join(',')})` }}
+        role="img"
+        aria-label={`${total} invoices by channel`}
+      >
+        <span className="donut-center">
+          <span className="donut-num">{total}</span>
+          <span className="donut-lbl">Total</span>
+        </span>
+      </div>
+      <div className="donut-legend">
+        {segments.map((s) => {
+          const pct = sum ? Math.round((s.value / sum) * 100) : 0;
+          const active = activeKey === s.key;
+          return (
+            <button
+              type="button"
+              key={s.key}
+              className={`legend-row${active ? ' active' : ''}`}
+              onClick={onSegmentClick ? () => onSegmentClick(s.key) : undefined}
+              title={`${s.value} invoices (${pct}%)${onSegmentClick ? ' — click to filter' : ''}`}
+            >
+              <span className="legend-dot" style={{ background: s.color }} />
+              <span className="legend-name">{s.label}</span>
+              <span className="legend-val">{s.value}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

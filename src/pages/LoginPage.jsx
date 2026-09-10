@@ -146,12 +146,12 @@ export default function LoginPage() {
                 <WorkspaceSelector value={channelScope} onChange={setChannelScope} />
                 <FormField
                   id="lgn-empid"
-                  label="Mahindra EAML / Employee ID"
+                  label="Enter Email ID"
                   icon={<IdIcon className="lgn-ic" />}
                   error={fieldErr.empId}
                   type="text"
                   autoComplete="username"
-                  placeholder="Enter your Mahindra EAML / Employee ID"
+                  placeholder="Enter your Mahindra Email ID"
                   value={empId}
                   onChange={(e) => setEmpId(e.target.value)}
                 />
