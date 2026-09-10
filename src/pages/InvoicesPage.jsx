@@ -56,7 +56,7 @@ export default function InvoicesPage() {
     <>
       <header className="page-head">
         <h1 className="page-title">{isScoped ? `${scopeLabel} Invoice Tracking` : 'Invoice Tracking'}</h1>
-        <p className="page-sub">Monitor and manage invoices across processing channels — from upload through approval, booking and payment.</p>
+        <p className="page-sub">Every supplier invoice across the four processing channels — from upload to payment.</p>
       </header>
 
       <div className="seg-tabs" role="tablist" aria-label="Invoice view">
@@ -74,9 +74,9 @@ export default function InvoicesPage() {
         <>
           <div className="kpi-grid">
             <StatCard tone="warn" icon={<ClockIcon />} label="Pending Approval" value={pendingApproval} sub="Awaiting approver action" onClick={() => dispatch(setInvoiceFilterStatus('Pending Approval'))} active={invoiceFilterStatus === 'Pending Approval'} />
-            <StatCard icon={<CardIcon />} label="Payment Due" value={paymentDue} sub="Booked, due per payment cycle" onClick={() => dispatch(setInvoiceFilterStatus('Payment Due'))} active={invoiceFilterStatus === 'Payment Due'} />
-            <StatCard tone="bad" icon={<EyeOffIcon />} label="No UTR Visibility" value={noUtr} sub="Paid but UTR not yet synced from FBL1N" />
-            <StatCard tone="warn" icon={<SplitIcon />} label="Short-Paid" value={shortPaid} sub="Amount paid is less than the invoice amount" onClick={() => dispatch(setInvoiceFilterStatus('Short-Paid'))} active={invoiceFilterStatus === 'Short-Paid'} />
+            <StatCard icon={<CardIcon />} label="Payment Due" value={paymentDue} sub="Booked, due this cycle" onClick={() => dispatch(setInvoiceFilterStatus('Payment Due'))} active={invoiceFilterStatus === 'Payment Due'} />
+            <StatCard tone="bad" icon={<EyeOffIcon />} label="No UTR Visibility" value={noUtr} sub="Paid, UTR not yet synced" />
+            <StatCard tone="warn" icon={<SplitIcon />} label="Short-Paid" value={shortPaid} sub="Paid below invoice value" onClick={() => dispatch(setInvoiceFilterStatus('Short-Paid'))} active={invoiceFilterStatus === 'Short-Paid'} />
           </div>
 
           <div className="chart-grid">
@@ -93,16 +93,18 @@ export default function InvoicesPage() {
           </div>
 
           {!isScoped && (
-            <div className="tabbar">
-              <button type="button" className={`tab${!invoiceFilterChannel ? ' active' : ''}`} onClick={() => dispatch(setInvoiceFilterChannel(null))}>All {invoices.length}</button>
+            <div className="tabbar" role="tablist" aria-label="Filter invoices by channel">
+              <button type="button" role="tab" aria-selected={!invoiceFilterChannel} className={`tab${!invoiceFilterChannel ? ' active' : ''}`} onClick={() => dispatch(setInvoiceFilterChannel(null))}>
+                All <span className="tab-count">{invoices.length}</span>
+              </button>
               {CHANNELS.map((c) => (
-                <button type="button" key={c.key} className={`tab${invoiceFilterChannel === c.key ? ' active' : ''}`} onClick={() => dispatch(setInvoiceFilterChannel(c.key))}>
-                  {c.label} {invoices.filter((i) => i.channel === c.key).length}
+                <button type="button" role="tab" key={c.key} aria-selected={invoiceFilterChannel === c.key} className={`tab${invoiceFilterChannel === c.key ? ' active' : ''}`} onClick={() => dispatch(setInvoiceFilterChannel(c.key))}>
+                  {c.label} <span className="tab-count">{invoices.filter((i) => i.channel === c.key).length}</span>
                 </button>
               ))}
               {invoiceFilterStatus && (
-                <button type="button" className="tab active filter-clear" style={{ marginLeft: 'auto' }} onClick={() => dispatch(setInvoiceFilterStatus(invoiceFilterStatus))}>
-                  Status: {invoiceFilterStatus} ✕
+                <button type="button" className="tab filter-clear" style={{ marginLeft: 'auto' }} onClick={() => dispatch(setInvoiceFilterStatus(invoiceFilterStatus))}>
+                  Status: {invoiceFilterStatus} <span aria-hidden="true">✕</span>
                 </button>
               )}
             </div>

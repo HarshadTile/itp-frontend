@@ -31,18 +31,12 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
   const action = mode === 'simple' ? 'stageSimple' : mode === 'supplierSafe' ? 'supplierInvoiceDetail' : 'invoiceDetail';
   const title = mode === 'simple' ? 'Click to see current stage' : mode === 'supplierSafe' ? 'Click for the supplier-facing status view' : 'Click for full stage-by-stage status';
 
-  function openInvoice(no) {
-    dispatch(openModal({ kind: action, ctx: { no } }));
-  }
-  function openVendorCode(code) {
-    dispatch(openModal({ kind: 'vendorCodePreview', ctx: { code } }));
-  }
-  function openNotify(no) {
-    dispatch(openModal({ kind: 'notifyPreview', ctx: { no } }));
-  }
-  function openRaiseTicket(no) {
-    dispatch(openModal({ kind: 'raiseTicket', ctx: { no } }));
-  }
+  const openInvoice = (no) => dispatch(openModal({ kind: action, ctx: { no } }));
+  const openVendorCode = (code) => dispatch(openModal({ kind: 'vendorCodePreview', ctx: { code } }));
+  const openNotify = (no) => dispatch(openModal({ kind: 'notifyPreview', ctx: { no } }));
+  const openRaiseTicket = (no) => dispatch(openModal({ kind: 'raiseTicket', ctx: { no } }));
+
+  const colCount = (bulk ? 1 : 0) + 12;
 
   return (
     <div>
@@ -50,44 +44,57 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
         <div className="toolbar-left">
           <input
             className="search-box"
-            style={{ width: 280 }}
-            placeholder="Search invoice no, vendor, PO..."
+            style={{ width: 'clamp(200px, 26vw, 300px)' }}
+            placeholder="Search invoice no, vendor, PO…"
+            aria-label="Search invoices in this table"
             value={search}
             onChange={(e) => dispatch(setSearch({ key: tableKey, value: e.target.value }))}
           />
-          {selected.length > 0 && <span className="chip blue" style={{ marginLeft: 10 }}>{selected.length} selected</span>}
+          {selected.length > 0 && <span className="chip blue">{selected.length} selected</span>}
         </div>
         <div className="toolbar-right">
           {bulk && selected.length > 0 ? (
             <>
               <button type="button" className="btn" onClick={() => { dispatch(pushToast(`Status email sent for ${selected.length} invoice${selected.length === 1 ? '' : 's'}.`)); dispatch(clearSelection(tableKey)); }}><Mail />Notify Selected</button>
-              <button type="button" className="btn" onClick={() => dispatch(pushToast(`Exporting ${selected.length} invoice${selected.length === 1 ? '' : 's'} to Excel...`))}><Download />Export Selected</button>
+              <button type="button" className="btn" onClick={() => dispatch(pushToast(`Exporting ${selected.length} invoice${selected.length === 1 ? '' : 's'} to Excel…`))}><Download />Export Selected</button>
             </>
           ) : (
-            <button type="button" className="btn" onClick={() => dispatch(pushToast('Exporting all invoices to Excel...'))}><Download />Export All</button>
+            <button type="button" className="btn" onClick={() => dispatch(pushToast('Exporting all invoices to Excel…'))}><Download />Export All</button>
           )}
         </div>
       </div>
+
       <div className="table-scroll">
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               {bulk && (
-                <th style={{ width: 30 }}>
+                <th scope="col" style={{ width: 34 }}>
                   <input
                     type="checkbox"
+                    aria-label="Select all rows on this page"
                     checked={pageAllSelected}
                     onChange={(e) => dispatch(setSelectAll({ key: tableKey, nos: pageRows.map((i) => i.no), checked: e.target.checked }))}
                   />
                 </th>
               )}
-              <th>Invoice No</th><th>Vendor Code</th><th>Vendor</th><th>Channel</th><th>PO No</th><th>Amount</th>
-              <th>Status</th><th>Current Stage</th><th>Handled By</th><th>UTR No</th><th>Date</th><th>Notify</th><th>Raise Query</th><th></th>
+              <th scope="col">Invoice No</th>
+              <th scope="col">Vendor Code</th>
+              <th scope="col">Vendor</th>
+              <th scope="col">Channel</th>
+              <th scope="col">PO No</th>
+              <th scope="col" className="num">Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col">Current Stage</th>
+              <th scope="col">Handled By</th>
+              <th scope="col">UTR No</th>
+              <th scope="col">Date</th>
+              <th scope="col" className="col-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 && (
-              <tr><td colSpan={bulk ? 15 : 14}>
+              <tr><td colSpan={colCount}>
                 <div className="empty-state">
                   <Inbox />
                   <b>No invoices found</b>
@@ -101,7 +108,7 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
                 <tr key={inv.no}>
                   {bulk && (
                     <td>
-                      <input type="checkbox" checked={selected.includes(inv.no)} onChange={() => dispatch(toggleSelectRow({ key: tableKey, no: inv.no }))} />
+                      <input type="checkbox" aria-label={`Select ${inv.no}`} checked={selected.includes(inv.no)} onChange={() => dispatch(toggleSelectRow({ key: tableKey, no: inv.no }))} />
                     </td>
                   )}
                   <td><button type="button" className="link-hero" title={title} onClick={() => openInvoice(inv.no)}>{inv.no}</button></td>
@@ -109,24 +116,29 @@ export default function InvoiceTable({ invoices, tableKey, mode = 'full', bulk =
                   <td>{inv.vendor}</td>
                   <td>{CHANNEL_LABEL[inv.channel]}</td>
                   <td>{inv.po}</td>
-                  <td className="mono">{inv.amount}</td>
+                  <td className="num mono">{inv.amount}</td>
                   <td><Badge tone={STATUS_CHIP[inv.status] || 'gray'}>{inv.status}</Badge></td>
-                  <td><span className="chip gray" style={{ whiteSpace: 'normal' }}>{currentStageName(inv)}</span></td>
+                  <td className="cell-muted" style={{ whiteSpace: 'normal', minWidth: 150 }}>{currentStageName(inv)}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     {owner.name}
-                    {owner.role && owner.name !== 'MDE Invoice Team' && <><br /><span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{owner.role}</span></>}
+                    {owner.role && owner.name !== 'MDE Invoice Team' && <><br /><span className="cell-sub">{owner.role}</span></>}
                   </td>
-                  <td>{inv.utr === '-' ? <span style={{ color: '#CBD5E1' }}>Not yet visible</span> : inv.utr}</td>
-                  <td>{inv.date}</td>
-                  <td><button type="button" className="kebab" title="Notify Supplier: preview To / CC" aria-label="Notify supplier" onClick={() => openNotify(inv.no)}><Mail /></button></td>
-                  <td><button type="button" className="kebab" title="Raise a query on this invoice" aria-label="Raise a query on this invoice" onClick={() => openRaiseTicket(inv.no)}><Flag /></button></td>
-                  <td><button type="button" className="kebab" title={title} aria-label="View invoice" onClick={() => openInvoice(inv.no)}><Eye /></button></td>
+                  <td>{inv.utr === '-' ? <span className="cell-dim">Not yet visible</span> : inv.utr}</td>
+                  <td className="cell-muted">{inv.date}</td>
+                  <td className="col-actions">
+                    <div className="row-actions">
+                      <button type="button" className="kebab" title="Notify supplier: preview To / CC" aria-label="Notify supplier" onClick={() => openNotify(inv.no)}><Mail /></button>
+                      <button type="button" className="kebab" title="Raise a query on this invoice" aria-label="Raise a query on this invoice" onClick={() => openRaiseTicket(inv.no)}><Flag /></button>
+                      <button type="button" className="kebab" title={title} aria-label="View invoice" onClick={() => openInvoice(inv.no)}><Eye /></button>
+                    </div>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
       <PagerFoot total={filtered.length} page={currentPage} pageSize={PAGE_SIZE} onPage={(p) => dispatch(setTablePage({ key: tableKey, page: p }))} />
     </div>
   );
