@@ -235,8 +235,9 @@ tbody tr:hover{background:#F8F9FB;}
 .chart-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;margin-bottom:20px;align-items:start;}
 .chart-grid > .card:only-child{grid-column:1 / -1;}
 .kpi-grid .stat-card{min-width:0;}
-@media (max-width:1200px){.chart-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}}
-@media (max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.chart-grid{grid-template-columns:1fr;}}
+@media (max-width:1360px){.kpi-grid{gap:12px;}.chart-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;}}
+@media (max-width:1120px){.chart-grid{grid-template-columns:1fr;}}
+@media (max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media (max-width:560px){.kpi-grid{grid-template-columns:1fr;}.seg-tabs{display:flex;}}
 .sheet-carousel{display:flex;align-items:center;gap:8px;}
 .car-track{display:flex;gap:8px;overflow-x:auto;padding:4px 2px;flex:1;}
