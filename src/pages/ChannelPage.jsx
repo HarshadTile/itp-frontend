@@ -31,14 +31,13 @@ export default function ChannelPage() {
   return (
     <>
       <h1 className="page-title">{channel.label}</h1>
-      <div className="sheet-carousel">
+      <div className="sheet-carousel" style={{ margin: '4px 0 16px' }}>
         <div className="car-track">
           {channel.views.map((v) => (
             <button type="button" key={v} className={`car-chip${v === activeView ? ' active' : ''}`} onClick={() => dispatch(setChannelViewTab({ key, view: v }))}>{v}</button>
           ))}
         </div>
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '-8px 0 14px' }}>Click any Invoice No for full stage-by-stage status, or any Vendor Code to see everything for that supplier.</p>
 
       {activeView === 'Invoice Log' && (
         <div className="card"><InvoiceTable invoices={channelInvoices} tableKey={`channel-${key}`} mode="full" /></div>
@@ -95,8 +94,7 @@ function ChannelQueries({ channelKey }) {
 
   return (
     <>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '-4px 0 14px' }}>Only queries raised against a {CHANNEL_LABEL[channelKey]} invoice show up here, nothing from the other three channels.</p>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
         <div className="sheet-carousel">
           <div className="car-track">
             <button type="button" className={`car-chip${view === 'list' ? ' active' : ''}`} onClick={() => dispatch(setChannelQueryViewMode('list'))}>☰ List</button>
@@ -104,7 +102,7 @@ function ChannelQueries({ channelKey }) {
           </div>
         </div>
       </div>
-      <div className="row" style={{ marginBottom: 20 }}>
+      <div className="row" style={{ marginBottom: 14 }}>
         <StatCard tone="bad" icon="✉" label="Open" value={open} />
         <StatCard tone="warn" icon="◑" label="In Progress" value={inProgress} />
         <StatCard tone="bad" icon="⚠" label="SLA Breached" value={breached} />
