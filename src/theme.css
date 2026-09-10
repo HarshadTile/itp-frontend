@@ -255,10 +255,13 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 
 /* dashboard grids */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;}
-.chart-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;margin-bottom:16px;align-items:start;}
+.chart-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px;margin-bottom:16px;align-items:stretch;}
 .chart-grid > .card:only-child{grid-column:1 / -1;}
-.chart-grid .card{padding:16px 18px;}
-.chart-grid .card h3{margin-bottom:10px;}
+.chart-grid .card{padding:16px 18px;display:flex;flex-direction:column;}
+.chart-grid .card h3{margin-bottom:10px;flex-shrink:0;}
+/* bar chart breathes to fill the card so its height matches the donut card */
+.chart-grid .barchart{margin-top:auto;margin-bottom:auto;}
+.donut-wrap{flex:1;justify-content:center;}
 .kpi-grid .stat-card{min-width:0;}
 @media (max-width:1360px){.kpi-grid{gap:12px;}.chart-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;}}
 @media (max-width:1120px){.chart-grid{grid-template-columns:1fr;}}
@@ -331,8 +334,8 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 
 /* ---------- Charts (pure CSS) ---------- */
 .barchart{
-  display:flex;align-items:flex-end;gap:clamp(10px,3vw,26px);
-  height:146px;padding:12px 4px 0;
+  display:flex;align-items:flex-end;gap:clamp(12px,4vw,40px);
+  height:168px;padding:14px 8px 0;
   border-bottom:1px solid var(--border);
   background:
     linear-gradient(transparent 0 calc(25% - 1px), var(--border-soft) calc(25% - 1px) 25%, transparent 25%),
@@ -342,9 +345,9 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 .barchart .bar-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;background:none;border:none;padding:0;cursor:pointer;min-width:0;}
 .barchart .bar-wrap:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px;}
 .barchart .bar{
-  width:min(46px,70%);
-  background:#D7DAE0;
-  border-radius:5px 5px 0 0;min-height:4px;
+  width:min(64px,80%);
+  background:#DADCE2;
+  border-radius:6px 6px 0 0;min-height:4px;
   transition:background .16s ease,filter .16s ease;
 }
 .barchart .bar-wrap:hover .bar{filter:brightness(.94);}
@@ -359,12 +362,19 @@ thead th.col-actions{background:#F7F8FA;z-index:3;}
 .donut-center{position:relative;z-index:1;text-align:center;line-height:1.1;}
 .donut-num{display:block;font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--ink);}
 .donut-lbl{display:block;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:1px;}
+.donut-legend{
+  margin-top:12px;width:100%;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1px 10px;
+}
+@media (max-width:1120px){.donut-legend{grid-template-columns:1fr;max-width:280px;margin-inline:auto;}}
 .legend-dot{width:8px;height:8px;border-radius:3px;display:inline-block;margin-right:8px;flex-shrink:0;}
-.legend-row{padding:4px 8px;border-radius:6px;transition:background .12s;cursor:pointer;background:none;border:none;display:flex;align-items:center;width:100%;text-align:left;font-size:11.5px;color:var(--text-body);}
+.legend-row{padding:4px 8px;border-radius:6px;transition:background .12s;cursor:pointer;background:none;border:none;display:flex;align-items:center;min-width:0;text-align:left;font-size:11.5px;color:var(--text-body);}
+.legend-row .legend-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .legend-row:hover{background:var(--gray-bg);}
 .legend-row:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}
 .legend-row.active{background:var(--brand-tint);font-weight:600;color:var(--ink);}
-.legend-row .legend-val{margin-left:auto;color:var(--text-muted);font-weight:600;font-size:11px;}
+.legend-row .legend-val{margin-left:auto;padding-left:8px;color:var(--text-muted);font-weight:600;font-size:11px;white-space:nowrap;}
 
 /* ---------- Timeline ---------- */
 .timeline-item{display:flex;gap:10px;}

@@ -26,9 +26,10 @@ const SplitIcon = (p) => (
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M12 3v18M5 8l-3 4 3 4M19 8l3 4-3 4" /></svg>
 );
 
+/* one colour per status — no two the same */
 const STATUS_COLOR = {
-  Paid: 'var(--green)', 'Payment Due': 'var(--blue)', Booked: 'var(--purple)', Approved: 'var(--blue)',
-  'Pending Approval': 'var(--amber)', Uploaded: '#94A3B8', 'Short-Paid': 'var(--amber)', Failed: 'var(--red)',
+  Paid: '#16A34A', 'Payment Due': '#2563EB', Approved: '#0EA5E9', Booked: '#7C3AED',
+  'Pending Approval': '#D97706', 'Short-Paid': '#EA9308', Uploaded: '#94A3B8', Failed: '#DC2626',
 };
 const STATUS_ORDER = ['Paid', 'Payment Due', 'Booked', 'Approved', 'Pending Approval', 'Uploaded', 'Short-Paid', 'Failed'];
 
