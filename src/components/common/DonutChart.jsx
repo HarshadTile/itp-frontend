@@ -1,10 +1,13 @@
 /** Compact donut with an inline legend. Click a segment/row to filter. */
 export default function DonutChart({ segments, total, onSegmentClick, activeKey }) {
   const sum = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const GAP = segments.length > 1 ? 1.4 : 0; // thin white separator between slices
   const stops = [];
-  segments.reduce((offset, s) => {
+  segments.reduce((offset, s, i) => {
     const end = offset + (s.value / sum) * 100;
-    stops.push(`${s.color} ${offset}% ${end}%`);
+    const a = i === 0 ? offset : offset + GAP / 2;
+    const b = i === segments.length - 1 ? end : end - GAP / 2;
+    stops.push(`#fff ${offset}% ${a}%`, `${s.color} ${a}% ${b}%`, `#fff ${b}% ${end}%`);
     return end;
   }, 0);
   return (

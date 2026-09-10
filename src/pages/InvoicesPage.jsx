@@ -16,13 +16,20 @@ const CardIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="n
 const EyeOffIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A9.5 9.5 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.5 6.5A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.5-.7" /></svg>);
 const SplitIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M12 3v18M5 8l-3 4 3 4M19 8l3 4-3 4" /></svg>);
 
-const CHANNEL_COLOR = { msetuSrm: '#C4122E', poPortal: '#2563EB', manual: '#7C3AED', mfoxPortal: '#0EA5E9' };
-const STATUS_COLOR = {
-  Paid: '#16A34A', 'Payment Due': '#2563EB', Approved: '#0EA5E9', Booked: '#7C3AED',
-  'Pending Approval': '#D97706', 'Short-Paid': '#EA9308', Uploaded: '#94A3B8', Failed: '#DC2626',
-};
 const STATUS_ORDER = ['Paid', 'Payment Due', 'Booked', 'Approved', 'Pending Approval', 'Uploaded', 'Short-Paid', 'Failed'];
 const RECENT_LIMIT = 5;
+
+/* Single-hue Mahindra-red ramp: dark = largest value, light = smallest. */
+const RED_RAMP = ['#7C0A1B', '#9E0E24', '#C4122E', '#D63E51', '#E36B7B', '#EE97A3', '#F5BFC7', '#FADEE2'];
+function shadeByRank(items) {
+  const order = [...items].sort((a, b) => b.value - a.value).map((x) => x.key);
+  const n = Math.max(items.length - 1, 1);
+  return items.map((it) => {
+    const rank = order.indexOf(it.key);
+    const idx = Math.round((rank / n) * (RED_RAMP.length - 1));
+    return { ...it, color: RED_RAMP[idx] };
+  });
+}
 
 /* Aggregate the (already-loaded) invoice list into the same small shape the
    /invoices/summary endpoint returns — used as an offline fallback. */
@@ -76,11 +83,14 @@ export default function InvoicesPage() {
   const agg = summary || aggregate(invoices);
   const recentRows = recent || recentFrom(invoices);
 
-  const channelSegments = agg.byChannel
-    .map((c) => ({ key: c.key, label: CHANNEL_LABEL[c.key] || c.key, value: c.value, color: CHANNEL_COLOR[c.key] || '#94A3B8' }))
-    .filter((c) => c.value > 0);
-  const statusBars = agg.byStatus
-    .map((s) => ({ key: s.key, label: s.key, value: s.value, color: STATUS_COLOR[s.key] || '#94A3B8' }));
+  const channelSegments = shadeByRank(
+    agg.byChannel
+      .map((c) => ({ key: c.key, label: CHANNEL_LABEL[c.key] || c.key, value: c.value }))
+      .filter((c) => c.value > 0),
+  );
+  const statusBars = shadeByRank(
+    agg.byStatus.map((s) => ({ key: s.key, label: s.key, value: s.value })),
+  );
 
   return (
     <>
