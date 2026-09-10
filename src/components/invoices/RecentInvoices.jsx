@@ -2,7 +2,7 @@ import { useDispatch } from 'react-redux';
 import { CHANNEL_LABEL, STATUS_CHIP } from '../../data/constants';
 import { openModal } from '../../features/ui/uiSlice';
 import Badge from '../common/Badge.jsx';
-import { Flag, Eye, Inbox } from '../common/icons.jsx';
+import { Mail, Flag, Eye, Inbox } from '../common/icons.jsx';
 
 /**
  * Compact, read-only "recent invoices" list for the dashboard.
@@ -14,6 +14,7 @@ export default function RecentInvoices({ rows = [] }) {
   const openStage = (no) => dispatch(openModal({ kind: 'stageSimple', ctx: { no } }));
   const openVendorCode = (code) => dispatch(openModal({ kind: 'vendorCodePreview', ctx: { code } }));
   const openRaiseTicket = (no) => dispatch(openModal({ kind: 'raiseTicket', ctx: { no } }));
+  const openNotify = (no) => dispatch(openModal({ kind: 'notifyPreview', ctx: { no } }));
 
   return (
     <div className="recent-invoices">
@@ -46,6 +47,7 @@ export default function RecentInvoices({ rows = [] }) {
                 <td className="cell-muted">{inv.date}</td>
                 <td className="col-actions">
                   <div className="row-actions">
+                    <button type="button" className="kebab" title="Notify supplier: preview To / CC" aria-label="Notify supplier" onClick={() => openNotify(inv.no)}><Mail /></button>
                     <button type="button" className="kebab" title="Raise a query on this invoice" aria-label="Raise a query on this invoice" onClick={() => openRaiseTicket(inv.no)}><Flag /></button>
                     <button type="button" className="kebab" title="Open current stage" aria-label="View invoice" onClick={() => openStage(inv.no)}><Eye /></button>
                   </div>
