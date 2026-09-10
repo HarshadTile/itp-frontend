@@ -3,7 +3,7 @@ export default function BarChart({ bars, onBarClick, activeKey }) {
   return (
     <div className="barchart">
       {bars.map((b) => {
-        const h = max ? Math.round((b.value / max) * 110) + 8 : 8;
+        const h = max ? Math.round((b.value / max) * 84) + 6 : 6;
         const active = activeKey === b.key;
         return (
           <button

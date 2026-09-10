@@ -18,7 +18,7 @@ export default function DonutChart({ segments, total, onSegmentClick, activeKey 
           <span className="donut-lbl">Total Invoices</span>
         </span>
       </div>
-      <div style={{ marginTop: 16, width: '100%', maxWidth: 260 }}>
+      <div style={{ marginTop: 12, width: '100%', maxWidth: 260 }}>
         {segments.map((s) => {
           const pct = total ? Math.round((s.value / total) * 100) : 0;
           const active = activeKey === s.key;
