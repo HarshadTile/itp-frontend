@@ -1,5 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { RequireInternal, RequireSupplier, RequireHQ, RedirectIfLoggedIn } from './ProtectedRoute.jsx';
+import {
+  RequireInternal,
+  RequireSupplier,
+  RequireHQ,
+  RequireCapability,
+  SettingsIndexRedirect,
+  RedirectIfLoggedIn,
+} from './ProtectedRoute.jsx';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import InvoicesPage from '../pages/InvoicesPage.jsx';
@@ -39,8 +46,16 @@ export default function AppRoutes() {
             <Route path="/app/outputs" element={<OutputsPage />} />
             <Route path="/app/sync-log" element={<SyncLogPage />} />
             <Route path="/app/logs" element={<GlobalLogsPage />} />
-            <Route path="/app/settings/:sub" element={<SettingsPage />} />
-            <Route path="/app/settings" element={<Navigate to="/app/settings/integrations" replace />} />
+            <Route element={<RequireCapability cap="manageConfig" />}>
+              <Route path="/app/settings/integrations" element={<SettingsPage />} />
+              <Route path="/app/settings/notifications" element={<SettingsPage />} />
+            </Route>
+            <Route path="/app/settings/auditLogs" element={<SettingsPage />} />
+            <Route element={<RequireCapability cap="manageUsers" />}>
+              <Route path="/app/settings/users" element={<SettingsPage />} />
+              <Route path="/app/settings/roles" element={<SettingsPage />} />
+            </Route>
+            <Route path="/app/settings" element={<SettingsIndexRedirect />} />
           </Route>
         </Route>
       </Route>

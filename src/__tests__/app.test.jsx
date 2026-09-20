@@ -13,6 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
+import { api } from '../api/client';
 import authReducer from '../features/auth/authSlice';
 import ticketsReducer from '../features/tickets/ticketsSlice';
 import tablesReducer from '../features/tables/tablesSlice';
@@ -83,9 +84,8 @@ describe('Login flows', () => {
     renderApp(freshStore());
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
     await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
-    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
     await user.click(screen.getByRole('button', { name: 'Login' }));
-    expect(await screen.findByText('Vendor Code Login')).toBeInTheDocument();
+    expect(await screen.findByText('DIT00388AC')).toBeInTheDocument();
     expect(screen.getByText('DIT00388AC')).toBeInTheDocument();
   });
 });
@@ -130,6 +130,19 @@ describe('Internal admin - full navigation', () => {
     }
   });
 
+  it('filters channel history invoices from KPI cards', async () => {
+    const { user } = await loginAdmin();
+    await user.click(screen.getByTitle('Msetu / SRM'));
+    await user.click(screen.getByRole('button', { name: 'History' }));
+    expect(await screen.findByText(/Msetu \/ SRM : Total Invoices/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^Failed 1$/ }));
+
+    expect(screen.getByRole('heading', { name: /Failed/ })).toBeInTheDocument();
+    expect(screen.getByText('INV-MS-1005')).toBeInTheDocument();
+    expect(screen.queryByText('INV-MS-1001')).not.toBeInTheDocument();
+  });
+
   it('opens the Stage Simple modal from the Recent Invoices list', async () => {
     const { user } = await loginAdmin();
     await user.click(screen.getAllByTitle('Open current stage')[0]);
@@ -147,6 +160,31 @@ describe('Internal admin - full navigation', () => {
     expect(await screen.findByText(/Stage-by-Stage Status/)).toBeInTheDocument();
     await user.click(screen.getByText('✕'));
     expect(screen.queryByText(/Stage-by-Stage Status/)).not.toBeInTheDocument();
+  });
+
+  it('moves an invoice to its next stage and persists it via PATCH', async () => {
+    const { user } = await loginAdmin();
+    await user.click(screen.getByText('Search Invoice(s)'));
+    await user.type(screen.getByPlaceholderText(/Type an invoice no/), 'INV-MS-1003');
+    await user.click(await screen.findByText('INV-MS-1003'));
+    await user.click(await screen.findByRole('button', { name: 'Mark Approved' }));
+    expect(await screen.findByText(/INV-MS-1003 moved to Approved/)).toBeInTheDocument();
+    expect(api.patch).toHaveBeenCalledWith('/invoices/INV-MS-1003', { status: 'Approved' });
+    // the modal re-renders from the updated record: next step is now Booked
+    expect(await screen.findByRole('button', { name: 'Mark Booked' })).toBeInTheDocument();
+  });
+
+  it('requires a UTR before marking an invoice Paid', async () => {
+    const { user } = await loginAdmin();
+    await user.click(screen.getByText('Search Invoice(s)'));
+    await user.type(screen.getByPlaceholderText(/Type an invoice no/), 'INV-MS-1002'); // Payment Due
+    await user.click(await screen.findByText('INV-MS-1002'));
+    await user.click(await screen.findByRole('button', { name: 'Mark Paid' }));
+    expect(await screen.findByText(/Enter the UTR number/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText('UTR number'), 'UTR999');
+    await user.click(screen.getByRole('button', { name: 'Mark Paid' }));
+    expect(await screen.findByText(/INV-MS-1002 moved to Paid/)).toBeInTheDocument();
+    expect(api.patch).toHaveBeenCalledWith('/invoices/INV-MS-1002', { status: 'Paid', utr: 'UTR999' });
   });
 
   it('previews a vendor code and opens its full view', async () => {
@@ -205,7 +243,7 @@ describe('Internal admin - full navigation', () => {
     const { user } = await loginAdmin();
     const select = screen.getByTitle(/Switch view/);
     await user.selectOptions(select, 'supplier:DIT00388AC');
-    expect(await screen.findByText('Vendor Code Login')).toBeInTheDocument();
+    expect(await screen.findByText('DIT00388AC')).toBeInTheDocument();
   });
 
   it('Settings: toggles a role permission', async () => {
@@ -278,6 +316,7 @@ describe('Internal admin - full navigation', () => {
   it('logs out and returns to login screen', async () => {
     const { user } = await loginAdmin();
     await user.click(screen.getByText('Logout'));
+    await user.click(await screen.findByRole('button', { name: 'Log Out' }));
     expect(await screen.findByText('Sign in to Invoice to Payment Tracker')).toBeInTheDocument();
   });
 });
@@ -289,9 +328,8 @@ describe('Supplier session', () => {
     renderApp(store);
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
     await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
-    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
     await user.click(screen.getByRole('button', { name: 'Login' }));
-    await screen.findByText('Vendor Code Login');
+    await screen.findByText('DIT00388AC');
     return { store, user };
   }
 
@@ -341,9 +379,8 @@ describe('Supplier session', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Supplier' }));
     await user.type(screen.getByPlaceholderText('Enter your vendor code'), 'DIT00388AC');
-    await user.type(screen.getByPlaceholderText('Enter your password'), 'demo-pass');
     await user.click(screen.getByRole('button', { name: 'Login' }));
-    await screen.findByText('Vendor Code Login');
+    await screen.findByText('DIT00388AC');
     // supplier is logged in; app-level guard should keep them off /app/* even if navigated there
     expect(screen.queryByText('Vendor Status Reports')).not.toBeInTheDocument();
   });

@@ -40,8 +40,6 @@ const settingsSlice = createSlice({
 export const { hydrateSettings, togglePermissionLocal, toggleTwoFactorLocal } = settingsSlice.actions;
 export default settingsSlice.reducer;
 
-export const selectRoleMatrix = (state) => state.settings.roleMatrix;
-
 /* ---- write-through thunks ---- */
 export const togglePermission = (payload) => async (dispatch, getState) => {
   dispatch(togglePermissionLocal(payload));

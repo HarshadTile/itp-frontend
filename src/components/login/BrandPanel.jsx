@@ -9,7 +9,7 @@ export default function BrandPanel() {
       </div>
       <div className="lgn-hero-content">
         <p className="lgn-eyebrow">Finance &amp; Procurement</p>
-        <h1 className="lgn-hero-title">Invoice to Payment<br />Tracker</h1>
+        <h1 className="lgn-hero-title">Invoice to Payment{' '}<br />Tracker</h1>
         <p className="lgn-hero-text">
           Simplifying invoice processing, approvals and payment tracking across Mahindra.
         </p>

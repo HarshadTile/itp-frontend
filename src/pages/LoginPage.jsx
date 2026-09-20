@@ -55,7 +55,7 @@ export default function LoginPage() {
       setStatus('idle');
       if (err.status === 401) {
         setError(form.mode === 'supplier'
-          ? 'Invalid vendor code or password.'
+          ? 'Invalid vendor code.'
           : 'Invalid EAML / Employee ID or password.');
       } else {
         setError(err.message || 'Something went wrong. Please try again.');
@@ -77,12 +77,11 @@ export default function LoginPage() {
     e.preventDefault();
     const fe = {};
     if (!vcode.trim()) fe.vcode = 'Enter your vendor code.';
-    if (!password) fe.password = 'Enter your password.';
     setFieldErr(fe);
     if (Object.keys(fe).length) return;
     const code = vcode.trim();
     runLogin(
-      { mode: 'supplier', vcode: code, company: supplierForVendorCode(code), password },
+      { mode: 'supplier', vcode: code, company: supplierForVendorCode(code) },
       '/supplier/home',
     );
   }
@@ -161,8 +160,8 @@ export default function LoginPage() {
               </form>
             ) : (
               <form className="lgn-form" onSubmit={submitSupplier} noValidate>
-                {/* keeps the card the same height as the Internal Team tab (which has an extra Portal/Team field) */}
-                <div className="lgn-form-spacer" aria-hidden="true" />
+                {/* keeps the card the same height as the Internal Team tab */}
+                <div className="lgn-form-spacer supplier-code-only" aria-hidden="true" />
                 <FormField
                   id="lgn-vcode"
                   label="Vendor Code"
@@ -174,7 +173,6 @@ export default function LoginPage() {
                   value={vcode}
                   onChange={(e) => setVcode(e.target.value)}
                 />
-                {passwordField}
                 {rememberRow}
                 <PrimaryButton loading={busy} done={done} />
               </form>

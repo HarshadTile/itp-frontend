@@ -9,9 +9,6 @@ const tablesSlice = createSlice({
     hydrateTables(state, action) {
       state.byKey = action.payload || {};
     },
-    // ensureSeeded is now a no-op — kept so existing callers don't break.
-    ensureSeeded() {},
-
     setRowsLocal(state, action) {
       const { key, rows } = action.payload;
       state.byKey[key] = rows;
@@ -38,7 +35,7 @@ const tablesSlice = createSlice({
 });
 
 export const {
-  hydrateTables, ensureSeeded,
+  hydrateTables,
   setRowsLocal, addRowLocal, updateRowLocal, deleteRowLocal, toggleNotifRuleLocal,
 } = tablesSlice.actions;
 export default tablesSlice.reducer;

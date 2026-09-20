@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { CHANNELS, VIEW_COLUMNS, CHANNEL_LABEL, CHANNEL_SYNC_LABELS } from '../data/constants';
@@ -52,17 +52,65 @@ export default function ChannelPage() {
 }
 
 function ChannelHistory({ channelKey, channelInvoices }) {
+  const [activeKpi, setActiveKpi] = useState('total');
   const rows = runtime.syncLog.filter((s) => CHANNEL_SYNC_LABELS[channelKey].includes(s.channel));
   const done = channelInvoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid').length;
   const failed = channelInvoices.filter((i) => i.status === 'Failed').length;
   const ongoing = channelInvoices.length - done - failed;
+  const filters = {
+    total: {
+      label: 'Total Invoices',
+      invoices: channelInvoices,
+    },
+    completed: {
+      label: 'Completed / Done',
+      invoices: channelInvoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid'),
+    },
+    ongoing: {
+      label: 'Currently In Progress',
+      invoices: channelInvoices.filter((i) => i.status !== 'Paid' && i.status !== 'Short-Paid' && i.status !== 'Failed'),
+    },
+    failed: {
+      label: 'Failed',
+      invoices: channelInvoices.filter((i) => i.status === 'Failed'),
+    },
+  };
+  const activeFilter = filters[activeKpi] || filters.total;
+  const pickKpi = (id) => setActiveKpi((current) => (current === id ? 'total' : id));
+
   return (
     <>
       <div className="row" style={{ marginBottom: 18 }}>
-        <div className="stat-card"><div className="lbl">{CHANNEL_LABEL[channelKey]} : Total Invoices</div><div className="val">{channelInvoices.length}</div></div>
-        <div className="stat-card"><div className="lbl">Completed / Done</div><div className="val">{done}</div></div>
-        <div className="stat-card warn"><div className="lbl">Currently In Progress</div><div className="val">{Math.max(0, ongoing)}</div></div>
-        <div className="stat-card bad"><div className="lbl">Failed</div><div className="val">{failed}</div></div>
+        <StatCard
+          label={`${CHANNEL_LABEL[channelKey]} : Total Invoices`}
+          value={channelInvoices.length}
+          onClick={() => setActiveKpi('total')}
+          active={activeKpi === 'total'}
+        />
+        <StatCard
+          label="Completed / Done"
+          value={done}
+          onClick={() => pickKpi('completed')}
+          active={activeKpi === 'completed'}
+        />
+        <StatCard
+          tone="warn"
+          label="Currently In Progress"
+          value={Math.max(0, ongoing)}
+          onClick={() => pickKpi('ongoing')}
+          active={activeKpi === 'ongoing'}
+        />
+        <StatCard
+          tone="bad"
+          label="Failed"
+          value={failed}
+          onClick={() => pickKpi('failed')}
+          active={activeKpi === 'failed'}
+        />
+      </div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <h3>{activeFilter.label} <span className="card-hint">{activeFilter.invoices.length} invoice{activeFilter.invoices.length === 1 ? '' : 's'}</span></h3>
+        <InvoiceTable invoices={activeFilter.invoices} tableKey={`channel-${channelKey}-history-${activeKpi}`} mode="full" />
       </div>
       <div className="card">
         <h3>Data Sync Log : {CHANNEL_LABEL[channelKey]}</h3>

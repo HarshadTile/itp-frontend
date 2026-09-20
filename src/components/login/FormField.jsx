@@ -29,8 +29,17 @@ export default function FormField({
         />
         {trailing}
       </div>
-      {note && !error && <span className="lgn-field-note">{note}</span>}
-      {error && <span id={msgId} className="lgn-field-msg">{error}</span>}
+      {note && !error ? (
+        <span className="lgn-field-note">{note}</span>
+      ) : (
+        <span
+          id={msgId}
+          className="lgn-field-msg"
+          aria-hidden={error ? undefined : true}
+        >
+          {error || '\u00a0'}
+        </span>
+      )}
     </div>
   );
 }

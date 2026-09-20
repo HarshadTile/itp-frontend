@@ -65,23 +65,31 @@ export default function InvoicesPage() {
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState(null);
 
+  const dataVersion = useSelector((s) => s.ui.dataVersion);
+  const fetchKey = `${isScoped ? 'team' : 'all'}:${dataVersion}`;
+
   useEffect(() => {
     let alive = true;
+    // An HQ admin viewing "as Internal Team" has an unscoped session, so the
+    // scope is sent explicitly; a real Internal Team session is scoped server-side.
+    const scope = isScoped ? 'scope=internalTeam' : '';
     (async () => {
       try {
-        const s = await api.get('/invoices/summary');
-        if (alive && s && s.kpi) setSummary(s);
+        const s = await api.get(`/invoices/summary${scope ? `?${scope}` : ''}`);
+        if (alive && s && s.kpi) setSummary({ key: fetchKey, data: s });
       } catch { /* fall back */ }
       try {
-        const r = await api.get(`/invoices/recent?limit=${RECENT_LIMIT}`);
-        if (alive && Array.isArray(r)) setRecent(r);
+        const r = await api.get(`/invoices/recent?limit=${RECENT_LIMIT}${scope ? `&${scope}` : ''}`);
+        if (alive && Array.isArray(r)) setRecent({ key: fetchKey, data: r });
       } catch { /* fall back */ }
     })();
     return () => { alive = false; };
-  }, [isScoped]);
+  }, [fetchKey, isScoped]);
 
-  const agg = summary || aggregate(invoices);
-  const recentRows = recent || recentFrom(invoices);
+  // Server numbers are only used while they belong to the current scope/data
+  // version; otherwise the (already scoped) loaded list is the fallback.
+  const agg = summary?.key === fetchKey ? summary.data : aggregate(invoices);
+  const recentRows = recent?.key === fetchKey ? recent.data : recentFrom(invoices);
 
   const channelSegments = shadeByRank(
     agg.byChannel

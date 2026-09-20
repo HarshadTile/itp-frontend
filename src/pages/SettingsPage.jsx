@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { ensureSeeded, selectTable, toggleNotifRule } from '../features/tables/tablesSlice';
+import { selectTable, toggleNotifRule } from '../features/tables/tablesSlice';
 import { togglePermission } from '../features/settings/settingsSlice';
 import { selectPerm } from '../features/auth/authSlice';
 import EditableTable from '../components/common/EditableTable.jsx';
@@ -17,7 +17,9 @@ const CAPS = [
 ];
 
 export default function SettingsPage() {
-  const { sub } = useParams();
+  const { sub: routeSub } = useParams();
+  const location = useLocation();
+  const sub = routeSub || location.pathname.split('/').filter(Boolean).at(-1);
   const title = TITLES[sub] || 'Settings';
 
   return (
@@ -53,7 +55,6 @@ function IntegrationsTab() {
 function NotificationsTab() {
   const dispatch = useDispatch();
   const tableKey = 'settings-notifications';
-  useEffect(() => { dispatch(ensureSeeded(tableKey)); }, [dispatch]);
   const rows = useSelector((s) => selectTable(s, tableKey));
   const senderEmail = useSelector((s) => s.settings.senderEmail);
   const perm = useSelector(selectPerm);
@@ -86,9 +87,7 @@ function NotificationsTab() {
 }
 
 function AuditLogsTab() {
-  const dispatch = useDispatch();
   const tableKey = 'settings-audit';
-  useEffect(() => { dispatch(ensureSeeded(tableKey)); }, [dispatch]);
   const rows = useSelector((s) => selectTable(s, tableKey));
   return (
     <div className="card">
@@ -98,14 +97,12 @@ function AuditLogsTab() {
 }
 
 function UsersTab() {
-  const dispatch = useDispatch();
   const tableKey = 'settings-users';
-  useEffect(() => { dispatch(ensureSeeded(tableKey)); }, [dispatch]);
   const rows = useSelector((s) => selectTable(s, tableKey));
   const perm = useSelector(selectPerm);
   return (
     <div className="card">
-      <EditableTable tableKey={tableKey} cols={['Name', 'Email', 'Job Title', 'Department', 'Role', 'Status']} rows={rows} canEdit={perm.editRows} canImportExport={perm.importExport} />
+      <EditableTable tableKey={tableKey} cols={['Name', 'Email', 'Job Title', 'Department', 'Role', 'Status']} rows={rows} canEdit={perm.manageUsers} canImportExport={perm.importExport} />
     </div>
   );
 }
@@ -116,25 +113,27 @@ function RolesTab() {
   const roles = Object.keys(roleMatrix);
   return (
     <div className="card">
-      <table className="perm-table">
-        <thead><tr><th>Capability</th>{roles.map((r) => <th key={r}>{r}</th>)}</tr></thead>
-        <tbody>
-          {CAPS.map(([capKey, capLabel]) => (
-            <tr key={capKey}>
-              <td>{capLabel}</td>
-              {roles.map((r) => (
-                <td key={r}>
-                  <button
-                    type="button"
-                    className={`check-toggle${roleMatrix[r][capKey] ? ' on' : ''}`}
-                    onClick={() => dispatch(togglePermission({ role: r, cap: capKey }))}
-                  >{roleMatrix[r][capKey] ? '✓' : ''}</button>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-scroll">
+        <table className="perm-table">
+          <thead><tr><th>Capability</th>{roles.map((r) => <th key={r}>{r}</th>)}</tr></thead>
+          <tbody>
+            {CAPS.map(([capKey, capLabel]) => (
+              <tr key={capKey}>
+                <td>{capLabel}</td>
+                {roles.map((r) => (
+                  <td key={r}>
+                    <button
+                      type="button"
+                      className={`check-toggle${roleMatrix[r][capKey] ? ' on' : ''}`}
+                      onClick={() => dispatch(togglePermission({ role: r, cap: capKey }))}
+                    >{roleMatrix[r][capKey] ? '✓' : ''}</button>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

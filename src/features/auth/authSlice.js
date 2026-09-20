@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { panFor, vendorCodesFor, supplierForVendorCode } from '../../utils/businessLogic';
+import { panFor, supplierForVendorCode } from '../../utils/businessLogic';
 
 const initialState = {
   loggedIn: false,
@@ -16,24 +16,6 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginInternal(state, action) {
-      const channelScope = action.payload?.channelScope === 'internalTeam' ? 'internalTeam' : 'all';
-      state.loggedIn = true;
-      state.authType = 'internal';
-      state.channelScope = channelScope;
-      state.role = channelScope === 'all' ? 'Admin' : 'MDE Invoice Team';
-      state.supplierQuery = null;
-      state.supplierPAN = null;
-      state.supplierLoginVcode = null;
-    },
-    loginSupplier(state, action) {
-      const { supplier, vcode } = action.payload;
-      state.loggedIn = true;
-      state.authType = 'supplier';
-      state.supplierQuery = supplier;
-      state.supplierPAN = panFor(supplier);
-      state.supplierLoginVcode = vcode || vendorCodesFor(supplier)[0];
-    },
     switchIdentity(state, action) {
       // payload: 'internal:all' | 'internal:internalTeam' | 'supplier:<vendorCode>'
       const [kind, val] = action.payload.split(':');
@@ -62,12 +44,10 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginInternal, loginSupplier, switchIdentity, logout, setAuthFromServer } = authSlice.actions;
+export const { switchIdentity, logout, setAuthFromServer } = authSlice.actions;
 export default authSlice.reducer;
 
 /* ---- selectors ---- */
-export const selectAuth = (state) => state.auth;
-export const selectIsScopedInternal = (state) => state.auth.authType === 'internal' && state.auth.channelScope === 'internalTeam';
 export const selectPerm = (state) => {
   const ROLE_MATRIX = state.settings.roleMatrix;
   return ROLE_MATRIX[state.auth.role] || ROLE_MATRIX.Viewer;

@@ -2,13 +2,13 @@ import { createSlice, nanoid } from '@reduxjs/toolkit';
 
 const initialState = {
   expandedNav: ['channels'],
+  sidebarOpen: false, // off-canvas menu on narrow screens
+  dataVersion: 0, // bumped when runtime.invoices is edited in place, so views re-read it
   modal: null, // { kind, ctx }
   toasts: [], // { id, msg }
   search: {}, // tableKey -> string
   tablePage: {}, // tableKey -> number
   tableSelected: {}, // tableKey -> string[] (invoice numbers)
-  invoiceFilterChannel: null,
-  invoiceFilterStatus: null,
   invoicesTopTab: 'All Invoices',
   ticketFilterStatus: null,
   channelViewTab: {}, // channelKey -> view name
@@ -18,7 +18,6 @@ const initialState = {
   channelQueryViewMode: 'list',
   supplierHomeTab: 'current',
   supplierVisibilityQuery: 'Tata Communications Ltd',
-  ticketDetailTab: {}, // ticketId -> tab name
   globalLogsChannel: null,
   globalLogsStatus: null,
 };
@@ -34,6 +33,15 @@ const uiSlice = createSlice({
     },
     ensureNavExpanded(state, action) {
       if (!state.expandedNav.includes(action.payload)) state.expandedNav.push(action.payload);
+    },
+    bumpData(state) {
+      state.dataVersion += 1;
+    },
+    toggleSidebar(state) {
+      state.sidebarOpen = !state.sidebarOpen;
+    },
+    closeSidebar(state) {
+      state.sidebarOpen = false;
     },
     openModal(state, action) {
       state.modal = action.payload; // { kind, ctx }
@@ -73,12 +81,6 @@ const uiSlice = createSlice({
     clearSelection(state, action) {
       state.tableSelected[action.payload] = [];
     },
-    setInvoiceFilterChannel(state, action) {
-      state.invoiceFilterChannel = action.payload || null;
-    },
-    setInvoiceFilterStatus(state, action) {
-      state.invoiceFilterStatus = state.invoiceFilterStatus === action.payload ? null : action.payload;
-    },
     setInvoicesTopTab(state, action) {
       state.invoicesTopTab = action.payload;
     },
@@ -108,10 +110,6 @@ const uiSlice = createSlice({
     setSupplierVisibilityQuery(state, action) {
       state.supplierVisibilityQuery = action.payload;
     },
-    setTicketDetailTab(state, action) {
-      const { id, tab } = action.payload;
-      state.ticketDetailTab[id] = tab;
-    },
     setGlobalLogsChannel(state, action) {
       state.globalLogsChannel = action.payload || null;
     },
@@ -120,18 +118,16 @@ const uiSlice = createSlice({
     },
     resetFiltersOnIdentitySwitch(state) {
       state.search = {};
-      state.invoiceFilterChannel = null;
-      state.invoiceFilterStatus = null;
     },
   },
 });
 
 export const {
-  toggleNavExpanded, ensureNavExpanded, openModal, closeModal, pushToast, dismissToast,
+  toggleNavExpanded, ensureNavExpanded, toggleSidebar, closeSidebar, bumpData, openModal, closeModal, pushToast, dismissToast,
   setSearch, setTablePage, toggleSelectRow, setSelectAll, clearSelection,
-  setInvoiceFilterChannel, setInvoiceFilterStatus, setInvoicesTopTab, setTicketFilterStatus,
+  setInvoicesTopTab, setTicketFilterStatus,
   setChannelViewTab, setVcodeViewTab, setInquiryViewMode, setInquiryChannelTab,
-  setChannelQueryViewMode, setSupplierHomeTab, setSupplierVisibilityQuery, setTicketDetailTab,
+  setChannelQueryViewMode, setSupplierHomeTab, setSupplierVisibilityQuery,
   setGlobalLogsChannel, setGlobalLogsStatus, resetFiltersOnIdentitySwitch,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -1,15 +1,39 @@
-import { useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { runtime } from '../../data/runtime';
 import { CHANNEL_STAGES, CHANNEL_LABEL, CHANNEL_ROUTING_RULE, STATUS_CHIP } from '../../data/constants';
 import { stageProgress, handlerFor } from '../../utils/businessLogic';
-import { closeModal, openModal } from '../../features/ui/uiSlice';
+import { closeModal, openModal, pushToast } from '../../features/ui/uiSlice';
+import { selectPerm } from '../../features/auth/authSlice';
+import { moveInvoice, nextStatusFor } from '../../features/invoices/invoiceThunks';
 import ModalShell from './ModalShell.jsx';
 import Badge from '../common/Badge.jsx';
 
 export default function InvoiceDetailModal({ ctx }) {
   const dispatch = useDispatch();
+  useSelector((s) => s.ui.dataVersion); // re-render when this invoice is moved
+  const perm = useSelector(selectPerm);
+  const authType = useSelector((s) => s.auth.authType);
+  const [utrInput, setUtrInput] = useState('');
+  const [moving, setMoving] = useState(false);
   const inv = runtime.invoices.find((i) => i.no === ctx.no);
   if (!inv) return null;
+
+  const next = authType === 'internal' && perm.editRows ? nextStatusFor(inv) : null;
+  const needsUtr = next === 'Paid';
+  async function advance() {
+    if (needsUtr && !utrInput.trim()) { dispatch(pushToast('Enter the UTR number to mark this invoice Paid.')); return; }
+    setMoving(true);
+    try {
+      await dispatch(moveInvoice({ no: inv.no, status: next, utr: needsUtr ? utrInput.trim() : undefined }));
+      dispatch(pushToast(`${inv.no} moved to ${next}.`));
+      setUtrInput('');
+    } catch (err) {
+      dispatch(pushToast(`Couldn't move invoice: ${err.message}`));
+    } finally {
+      setMoving(false);
+    }
+  }
   const stages = CHANNEL_STAGES[inv.channel];
   const done = stageProgress(inv.channel, inv.status);
   const failed = inv.status === 'Failed';
@@ -71,6 +95,25 @@ export default function InvoiceDetailModal({ ctx }) {
         })}
       </div>
 
+      {next && (
+        <div className="validation-row" style={{ flexWrap: 'wrap' }}>
+          <span>Move to next stage</span>
+          <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {needsUtr && (
+              <input
+                aria-label="UTR number"
+                placeholder="UTR number"
+                value={utrInput}
+                onChange={(e) => setUtrInput(e.target.value)}
+                style={{ padding: '6px 9px', borderRadius: 7, border: '1px solid var(--border)', fontSize: 12.5, width: 150 }}
+              />
+            )}
+            <button type="button" className="btn primary" disabled={moving} onClick={advance}>
+              {moving ? 'Saving…' : `Mark ${next}`}
+            </button>
+          </span>
+        </div>
+      )}
       <div className="validation-row"><span>Current Status</span><Badge tone={STATUS_CHIP[inv.status] || 'gray'}>{inv.status}</Badge></div>
       <div className="validation-row"><span>UTR No.</span><span>{inv.utr === '-' ? <span style={{ color: '#CBD5E1' }}>Not yet visible</span> : inv.utr}</span></div>
       {inv.shortPayReason && <div className="validation-row"><span>Short-Payment Reason</span><span style={{ textAlign: 'right', maxWidth: 280 }}>{inv.shortPayReason}</span></div>}

@@ -14,28 +14,46 @@ export default function ProfilePage() {
     return (
       <>
         <h1 className="page-title">My Profile</h1>
-        <div className="row" style={{ alignItems: 'flex-start' }}>
-          <div className="card" style={{ width: 280 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div className="avatar" style={{ width: 80, height: 80, fontSize: 22, margin: '0 auto 10px' }}>{pan.slice(0, 2)}</div>
-              <b>{supplierQuery}</b>
-              <p style={{ color: 'var(--brand)', fontSize: 12.5, margin: '2px 0' }}>Vendor Code {supplierLoginVcode}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>PAN {pan}</p>
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
+                Supplier Account
+              </div>
+              <h2 style={{ fontSize: 22, lineHeight: 1.2, margin: 0 }}>{supplierQuery}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                <span className="chip mono" style={{ background: 'var(--brand-tint)', color: 'var(--brand)' }}>{supplierLoginVcode}</span>
+                <span className="chip gray mono">PAN {pan}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)', fontSize: 12.5 }}>
+              <div className="avatar" style={{ width: 40, height: 40, fontSize: 13 }}>{pan.slice(0, 2)}</div>
+              <span>Vendor login profile</span>
             </div>
           </div>
-          <div className="card" style={{ flex: 1, minWidth: 320 }}>
-            <h3>Company Information</h3>
-            <div className="row">
-              <div className="form-field" style={{ flex: 1 }}><label>Supplier Name</label><input value={supplierQuery} readOnly /></div>
-              <div className="form-field" style={{ flex: 1 }}><label>PAN</label><input value={pan} readOnly /></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 12, marginBottom: 20 }}>
+            <ProfileInfo label="Supplier Name" value={supplierQuery} />
+            <ProfileInfo label="PAN" value={pan} mono />
+            <ProfileInfo label="Contact Email" value={supplierEmailFor(supplierQuery)} />
+            <ProfileInfo label="Contact Phone" value={synthPhone(supplierQuery)} />
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+              <h3 style={{ margin: 0 }}>All Vendor Codes Under This PAN</h3>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{codes.length} codes</span>
             </div>
-            <div className="form-field"><label>Contact Email</label><input value={supplierEmailFor(supplierQuery)} readOnly /></div>
-            <div className="form-field"><label>Contact Phone</label><input value={synthPhone(supplierQuery)} readOnly /></div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginTop: 14, marginBottom: 8 }}>
-              All Vendor Codes Under This PAN ({codes.length})
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {codes.map((c) => <span key={c} className={`chip mono ${c === supplierLoginVcode ? '' : 'gray'}`} style={c === supplierLoginVcode ? { background: 'var(--brand-tint)', color: 'var(--brand)' } : undefined}>{c}{c === supplierLoginVcode ? ' (this login)' : ''}</span>)}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {codes.map((c) => (
+                <span
+                  key={c}
+                  className={`chip mono ${c === supplierLoginVcode ? '' : 'gray'}`}
+                  style={c === supplierLoginVcode ? { background: 'var(--brand-tint)', color: 'var(--brand)' } : undefined}
+                >
+                  {c}{c === supplierLoginVcode ? ' (this login)' : ''}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -47,7 +65,7 @@ export default function ProfilePage() {
     <>
       <h1 className="page-title">User Profile</h1>
       <div className="row" style={{ alignItems: 'flex-start' }}>
-        <div className="card" style={{ width: 260 }}>
+        <div className="card" style={{ width: 260, maxWidth: '100%' }}>
           <div style={{ textAlign: 'center' }}>
             <div className="avatar" style={{ width: 80, height: 80, fontSize: 26, margin: '0 auto 10px' }}>{currentUser.initials}</div>
             <b>{currentUser.name}</b>
@@ -59,7 +77,7 @@ export default function ProfilePage() {
             <div style={{ flex: 1 }}><b>96%</b><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>SLA MET</div></div>
           </div>
         </div>
-        <div className="card" style={{ flex: 1, minWidth: 320 }}>
+        <div className="card" style={{ flex: 1, minWidth: 'min(320px, 100%)' }}>
           <h3>Personal Information</h3>
           <div className="row">
             <div className="form-field" style={{ flex: 1 }}><label>Full Name</label><input value={currentUser.name} readOnly /></div>
@@ -82,5 +100,14 @@ export default function ProfilePage() {
         </div>
       </div>
     </>
+  );
+}
+
+function ProfileInfo({ label, value, mono = false }) {
+  return (
+    <div style={{ background: '#FAFBFC', border: '1px solid var(--border-soft)', borderRadius: 9, padding: '12px 14px' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>{label}</div>
+      <div className={mono ? 'mono' : undefined} style={{ fontSize: 14, color: 'var(--text)', overflowWrap: 'anywhere' }}>{value}</div>
+    </div>
   );
 }

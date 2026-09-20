@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { APP_NOW, INTERNAL_TEAM_CHANNELS } from '../../data/constants';
-import { runtime } from '../../data/runtime';
+import { APP_NOW } from '../../data/constants';
 import { api } from '../../api/client';
 
 function today() {
@@ -9,9 +8,6 @@ function today() {
 function logActivity(t, text) {
   t.activity = t.activity || [];
   t.activity.push({ date: today(), text });
-}
-function findInvoice(no) {
-  return runtime.invoices.find((i) => i.no === no);
 }
 
 // Tickets are loaded from the API after login (see hydrateThunks.loadBootstrap).
@@ -169,16 +165,3 @@ export const setAssignee = ({ id, assignee }) => async (dispatch, getState) => {
   return updated;
 };
 
-/* ---- selectors ---- */
-export const selectAllTickets = (state) => state.tickets.items;
-export const selectTicketsForScope = (state) => {
-  const { authType, channelScope } = state.auth;
-  let list = state.tickets.items;
-  if (authType === 'internal' && channelScope === 'internalTeam') {
-    list = list.filter((t) => { const inv = findInvoice(t.no); return inv && INTERNAL_TEAM_CHANNELS.includes(inv.channel); });
-  }
-  return list;
-};
-export const selectTicketsForSupplier = (state, supplier) => state.tickets.items.filter((t) => { const inv = findInvoice(t.no); return inv && inv.vendor === supplier; });
-export const selectTicketsForVendorCode = (state, code) => state.tickets.items.filter((t) => { const inv = findInvoice(t.no); return inv && inv.vcode === code; });
-export const selectTicketsForChannel = (state, key) => state.tickets.items.filter((t) => { const inv = findInvoice(t.no); return inv && inv.channel === key; });

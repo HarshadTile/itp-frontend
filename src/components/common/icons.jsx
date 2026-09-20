@@ -33,7 +33,8 @@ export const Download = (p) => <Ic {...p} d={<><path d="M12 3v12M7 11l5 5 5-5" /
 export const Upload = (p) => <Ic {...p} d={<><path d="M12 21V9M7 13l5-5 5 5" /><path d="M5 3h14" /></>} />;
 export const Plus = (p) => <Ic {...p} d={<path d="M12 5v14M5 12h14" />} />;
 export const Filter = (p) => <Ic {...p} d={<path d="M3 5h18l-7 8v6l-4 2v-8z" />} />;
-export const X = (p) => <Ic {...p} d={<path d="M6 6l12 12M18 6 6 18" />} />;
+export const Menu = (p) => <Ic {...p} d={<path d="M4 6h16M4 12h16M4 18h16" />} />;
+export const X =(p) => <Ic {...p} d={<path d="M6 6l12 12M18 6 6 18" />} />;
 export const Inbox = (p) => <Ic {...p} d={<><path d="M4 13h4l2 3h4l2-3h4" /><path d="M4 13 6 5h12l2 8v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" /></>} />;
 export const Edit = (p) => <Ic {...p} d={<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>} />;
 export const Trash = (p) => <Ic {...p} d={<><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" /></>} />;

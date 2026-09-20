@@ -1,5 +1,6 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
+import { selectPerm } from '../features/auth/authSlice';
 
 /** Gate for the internal (HQ / Internal Team) side of the app. */
 export function RequireInternal() {
@@ -23,6 +24,22 @@ export function RequireHQ() {
   const { channelScope } = useSelector((s) => s.auth);
   if (channelScope !== 'all') return <Navigate to="/app/invoices" replace />;
   return <Outlet />;
+}
+
+export function RequireCapability({ cap, redirect = '/app/invoices' }) {
+  const perm = useSelector(selectPerm);
+  if (!perm?.[cap]) return <Navigate to={redirect} replace />;
+  return <Outlet />;
+}
+
+export function SettingsIndexRedirect() {
+  const perm = useSelector(selectPerm);
+  const target = perm.manageConfig
+    ? '/app/settings/integrations'
+    : perm.manageUsers
+      ? '/app/settings/users'
+      : '/app/invoices';
+  return <Navigate to={target} replace />;
 }
 
 export function RedirectIfLoggedIn({ children }) {

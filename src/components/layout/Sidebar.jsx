@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CHANNELS, LOGIN_CHANNELS, CHANNEL_LABEL } from '../../data/constants';
-import { toggleNavExpanded } from '../../features/ui/uiSlice';
-import { logoutThunk } from '../../features/bootstrap/hydrateThunks';
+import { CHANNELS, LOGIN_CHANNELS } from '../../data/constants';
+import { openModal, toggleNavExpanded } from '../../features/ui/uiSlice';
+import { selectPerm } from '../../features/auth/authSlice';
 import {
   FileText, Search, Layers, Building, MessageSquare, BarChart3, History,
   RefreshCw, Settings, Sliders, Users, Shield, Bell, User, LogOut, ChevronRight,
@@ -30,9 +30,19 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { authType, channelScope, supplierLoginVcode } = useSelector((s) => s.auth);
+  const perm = useSelector(selectPerm);
   const expandedNav = useSelector((s) => s.ui.expandedNav);
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
   const isOpen = (id) => expandedNav.includes(id);
+  const askLogout = () => dispatch(openModal({
+    kind: 'confirm',
+    ctx: {
+      title: 'Log Out',
+      message: 'Log out of this workspace? Any saved changes will remain available after you sign in again.',
+      confirmLabel: 'Log Out',
+      action: { type: 'logout' },
+    },
+  }));
 
   if (authType === 'supplier') {
     const code = supplierLoginVcode;
@@ -48,7 +58,7 @@ export default function Sidebar() {
           </nav>
           <div className="nav-bottom">
             <NavItem icon={<User />} label="My Profile" active={isActive('/supplier/profile')} onClick={() => navigate('/supplier/profile')} />
-            <NavItem icon={<LogOut />} label="Logout" onClick={() => { dispatch(logoutThunk()); navigate('/login'); }} />
+            <NavItem icon={<LogOut />} label="Logout" onClick={askLogout} />
           </div>
         </div>
       </aside>
@@ -57,6 +67,7 @@ export default function Sidebar() {
 
   const scoped = channelScope === 'internalTeam';
   const channelsToShow = scoped ? LOGIN_CHANNELS : CHANNELS;
+  const canUseSettings = perm.manageConfig || perm.manageUsers;
 
   return (
     <aside className="sidebar">
@@ -100,26 +111,28 @@ export default function Sidebar() {
               <NavItem icon={<BarChart3 />} label="Vendor Status Reports" active={isActive('/app/outputs')} onClick={() => navigate('/app/outputs')} />
               <NavItem icon={<History />} label="Logs / History" active={isActive('/app/logs')} onClick={() => navigate('/app/logs')} />
               <NavItem icon={<RefreshCw />} label="Sync Log" active={isActive('/app/sync-log')} onClick={() => navigate('/app/sync-log')} />
-              <NavItem
-                icon={<Settings />}
-                label="Settings"
-                hasChildren
-                open={isOpen('settings')}
-                onClick={() => dispatch(toggleNavExpanded('settings'))}
-              />
-              {isOpen('settings') && (
+              {canUseSettings && (
+                <NavItem
+                  icon={<Settings />}
+                  label="Settings"
+                  hasChildren
+                  open={isOpen('settings')}
+                  onClick={() => dispatch(toggleNavExpanded('settings'))}
+                />
+              )}
+              {canUseSettings && isOpen('settings') && (
                 <div className="nav-children lvl1">
-                  <NavItem icon={<Sliders />} label="Integration Settings" active={isActive('/app/settings/integrations')} onClick={() => navigate('/app/settings/integrations')} />
-                  <NavItem icon={<Bell />} label="Notifications" active={isActive('/app/settings/notifications')} onClick={() => navigate('/app/settings/notifications')} />
+                  {perm.manageConfig && <NavItem icon={<Sliders />} label="Integration Settings" active={isActive('/app/settings/integrations')} onClick={() => navigate('/app/settings/integrations')} />}
+                  {perm.manageConfig && <NavItem icon={<Bell />} label="Notifications" active={isActive('/app/settings/notifications')} onClick={() => navigate('/app/settings/notifications')} />}
                   <NavItem icon={<History />} label="Audit Logs" active={isActive('/app/settings/auditLogs')} onClick={() => navigate('/app/settings/auditLogs')} />
-                  <NavItem icon={<Users />} label="Users" active={isActive('/app/settings/users')} onClick={() => navigate('/app/settings/users')} />
-                  <NavItem icon={<Shield />} label="Roles & Permissions" active={isActive('/app/settings/roles')} onClick={() => navigate('/app/settings/roles')} />
+                  {perm.manageUsers && <NavItem icon={<Users />} label="Users" active={isActive('/app/settings/users')} onClick={() => navigate('/app/settings/users')} />}
+                  {perm.manageUsers && <NavItem icon={<Shield />} label="Roles & Permissions" active={isActive('/app/settings/roles')} onClick={() => navigate('/app/settings/roles')} />}
                 </div>
               )}
             </>
           )}
           <NavItem icon={<User />} label="Profile" active={isActive('/app/profile')} onClick={() => navigate('/app/profile')} />
-          <NavItem icon={<LogOut />} label="Logout" onClick={() => { dispatch(logoutThunk()); navigate('/login'); }} />
+          <NavItem icon={<LogOut />} label="Logout" onClick={askLogout} />
         </div>
       </div>
     </aside>
@@ -130,12 +143,6 @@ function Brand() {
   return (
     <div className="brand">
       <img src={logo} alt="Mahindra" />
-      <div className="brand-text">
-        <b>I2P Tracker</b>
-        <span>Invoice to Payment</span>
-      </div>
     </div>
   );
 }
-
-export { CHANNEL_LABEL };

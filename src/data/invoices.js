@@ -22,8 +22,6 @@ export const INVOICE_DATA = [
   { no: 'INV-MS-1008', vcode: 'BSC00021', vendor: 'Bosch Auto Components', channel: 'msetuSrm', po: '4500129940', amount: '₹2,15,000', status: 'Payment Due', utr: '-', date: '09 Aug 2026' },
 ];
 
-export const SUPPLIERS = [...new Set(INVOICE_DATA.map((i) => i.vendor))];
-
 export const SYNC_LOG = [
   { channel: 'Msetu / SRM', time: '06 Aug 2026, 07:00 AM', status: 'Success', records: 214, msg: '214 invoices pulled, 0 errors' },
   { channel: 'PO Portal', time: '06 Aug 2026, 07:02 AM', status: 'Success', records: 58, msg: '58 service-entry invoices pulled' },

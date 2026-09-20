@@ -9,6 +9,7 @@ import NotifyPreviewModal from './NotifyPreviewModal.jsx';
 import ImportModal from './ImportModal.jsx';
 import ExportModal from './ExportModal.jsx';
 import RowFormModal from './RowFormModal.jsx';
+import ConfirmModal from './ConfirmModal.jsx';
 
 const REGISTRY = {
   invoiceDetail: InvoiceDetailModal,
@@ -21,6 +22,7 @@ const REGISTRY = {
   import: ImportModal,
   export: ExportModal,
   row: RowFormModal,
+  confirm: ConfirmModal,
 };
 
 export default function ModalHost() {

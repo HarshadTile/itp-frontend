@@ -4,8 +4,13 @@ import { CHANNELS } from '../../data/constants';
 import { suppliersFromRuntime } from '../../data/runtime';
 import { vendorCodesFor, panFor } from '../../utils/businessLogic';
 import { switchIdentity } from '../../features/auth/authSlice';
-import { pushToast, resetFiltersOnIdentitySwitch } from '../../features/ui/uiSlice';
-import { Search, Bell, HelpCircle, ChevronDown } from '../common/icons.jsx';
+import { pushToast, resetFiltersOnIdentitySwitch, toggleSidebar } from '../../features/ui/uiSlice';
+import { Search, Bell, HelpCircle, ChevronDown, Menu } from '../common/icons.jsx';
+
+const SETTINGS_LABEL = {
+  integrations: 'Integration Settings', notifications: 'Notifications', auditLogs: 'Audit Logs',
+  users: 'Users', roles: 'Roles & Permissions',
+};
 
 function crumbFor(pathname, params) {
   if (pathname.startsWith('/app/invoices')) return 'Invoice Tracking';
@@ -20,7 +25,7 @@ function crumbFor(pathname, params) {
   if (pathname.startsWith('/supplier/logs')) return 'Logs';
   if (pathname.startsWith('/app/outputs')) return 'Vendor Status Reports';
   if (pathname.startsWith('/app/sync-log')) return 'Sync Log';
-  if (pathname.startsWith('/app/settings/')) return `Settings / ${params.sub || ''}`;
+  if (pathname.startsWith('/app/settings/')) return `Settings / ${SETTINGS_LABEL[pathname.split('/').pop()] || ''}`;
   if (pathname.startsWith('/app/profile') || pathname.startsWith('/supplier/profile')) return 'Profile';
   return '';
 }
@@ -53,6 +58,10 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
+      <button type="button" className="icon-btn menu-btn" aria-label="Open menu"
+        onClick={() => dispatch(toggleSidebar())}>
+        <Menu size={18} />
+      </button>
       <div className="crumb"><b>{crumb}</b></div>
 
       <div className="topbar-right">
