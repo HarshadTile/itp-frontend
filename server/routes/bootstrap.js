@@ -9,12 +9,21 @@ function parseJson(v) {
   return typeof v === 'string' ? JSON.parse(v) : v;
 }
 
-r.get('/bootstrap', requireAuth, async (_req, res, next) => {
+r.get('/bootstrap', requireAuth, async (req, res, next) => {
   try {
-    const invoices = (await query('SELECT * FROM invoices')).map(toInvoice);
+    // A supplier login only ever receives its own vendor code's invoices, the
+    // tickets raised on them, and none of the internal admin tables.
+    const isSupplier = req.session.authType === 'supplier';
+    const invoices = (isSupplier
+      ? await query('SELECT * FROM invoices WHERE vcode=?', [req.session.supplier?.vcode ?? ''])
+      : await query('SELECT * FROM invoices')).map(toInvoice);
     const syncLog = (await query('SELECT * FROM sync_log ORDER BY id')).map(toSyncRow);
 
-    const tRows = await query('SELECT * FROM tickets');
+    let tRows = await query('SELECT * FROM tickets');
+    if (isSupplier) {
+      const mine = new Set(invoices.map((i) => i.no));
+      tRows = tRows.filter((t) => mine.has(t.no));
+    }
     const comments = await query('SELECT * FROM ticket_comments ORDER BY ticket_id, seq');
     const activity = await query('SELECT * FROM ticket_activity ORDER BY ticket_id, seq');
     const tickets = tRows.map((row) => toTicket(
@@ -27,7 +36,7 @@ r.get('/bootstrap', requireAuth, async (_req, res, next) => {
       return Number.isFinite(n) ? Math.max(m, n) : m;
     }, 1005);
 
-    const tableRows = await query('SELECT * FROM table_rows ORDER BY table_key, row_index');
+    const tableRows = isSupplier ? [] : await query('SELECT * FROM table_rows ORDER BY table_key, row_index');
     const tables = {};
     for (const tr of tableRows) {
       (tables[tr.table_key] ||= []).push(parseJson(tr.cells_json));

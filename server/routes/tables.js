@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query, withConn } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { requireInternal, requireCap } from '../auth.js';
 
 const r = Router();
 
@@ -8,7 +8,7 @@ function parseJson(v) {
   return typeof v === 'string' ? JSON.parse(v) : v;
 }
 
-r.get('/tables/:key', requireAuth, async (req, res, next) => {
+r.get('/tables/:key', requireInternal, async (req, res, next) => {
   try {
     const rows = await query(
       'SELECT cells_json FROM table_rows WHERE table_key=? ORDER BY row_index',
@@ -20,7 +20,7 @@ r.get('/tables/:key', requireAuth, async (req, res, next) => {
   }
 });
 
-r.put('/tables/:key', requireAuth, async (req, res, next) => {
+r.put('/tables/:key', requireCap('editRows'), async (req, res, next) => {
   try {
     const key = req.params.key;
     const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];

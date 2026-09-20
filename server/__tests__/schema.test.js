@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { applySchema } from '../applySchema.js';
-import { query, closePools } from '../db.js';
+import { query, closePools, DB_NAME } from '../db.js';
 
 beforeAll(async () => { await applySchema(); });
 afterAll(async () => { await closePools(); });
@@ -11,10 +11,14 @@ const EXPECTED = [
 ];
 
 describe('schema', () => {
-  it('creates all expected tables in mahindra_i2p', async () => {
+  it('runs against the dedicated test database, never the demo one', () => {
+    expect(DB_NAME).toBe('mahindra_i2p_test');
+  });
+
+  it('creates all expected tables in the test database', async () => {
     const rows = await query(
       'SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?',
-      ['mahindra_i2p'],
+      [DB_NAME],
     );
     const names = rows.map((r) => String(r.t).toLowerCase());
     for (const t of EXPECTED) expect(names).toContain(t);

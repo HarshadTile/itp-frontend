@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query, withConn } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { requireAuth, requireCap } from '../auth.js';
 import { toTicket } from '../serializers.js';
 
 const r = Router();
@@ -18,10 +18,20 @@ async function loadTicket(id) {
   return toTicket(row, comments, activity);
 }
 
-r.get('/tickets', requireAuth, async (_req, res, next) => {
+/** A supplier session may only touch tickets raised on invoices of its own
+ *  vendor code. Internal sessions may touch any. */
+async function canAccessInvoice(session, invoiceNo) {
+  if (session.authType !== 'supplier') return true;
+  const [inv] = await query('SELECT vcode FROM invoices WHERE no=?', [invoiceNo]);
+  return !!inv && inv.vcode === session.supplier?.vcode;
+}
+
+r.get('/tickets', requireAuth, async (req, res, next) => {
   try {
-    const rows = await query('SELECT id FROM tickets');
-    res.json(await Promise.all(rows.map((x) => loadTicket(x.id))));
+    const rows = await query('SELECT id, no FROM tickets');
+    const visible = [];
+    for (const x of rows) if (await canAccessInvoice(req.session, x.no)) visible.push(x);
+    res.json(await Promise.all(visible.map((x) => loadTicket(x.id))));
   } catch (e) {
     next(e);
   }
@@ -29,26 +39,43 @@ r.get('/tickets', requireAuth, async (_req, res, next) => {
 
 r.post('/tickets', requireAuth, async (req, res, next) => {
   try {
-    const {
-      no, category, priority = 'Medium', desc, raisedBy, assignee = 'MDE Invoice Team',
-    } = req.body || {};
-    const [{ maxid }] = await query(
-      "SELECT COALESCE(MAX(CAST(SUBSTRING(id,5) AS UNSIGNED)),1005) AS maxid FROM tickets",
-    );
-    const seq = Number(maxid) + 1;
-    const id = 'TCK-' + seq;
+    const { no, category, priority = 'Medium', desc, assignee = 'MDE Invoice Team' } = req.body || {};
+    if (!no || !category) return res.status(400).json({ error: 'invoice no and category are required' });
+    const [inv] = await query('SELECT no FROM invoices WHERE no=?', [no]);
+    if (!inv) return res.status(404).json({ error: 'invoice not found' });
+    if (!(await canAccessInvoice(req.session, no))) return res.status(403).json({ error: 'Not your invoice.' });
+
+    // who raised it comes from the session, not the request body
+    const raisedBy = req.session.authType === 'supplier' ? 'Supplier' : 'Internal';
     const date = req.body.date || todayStr();
-    await withConn(async (c) => {
-      await c.execute(
-        `INSERT INTO tickets (id,no,category,description,status,priority,assignee,raised_by,raised_date,sla_hours,resolved_date)
-         VALUES (?,?,?,?,?,?,?,?,?,?,NULL)`,
-        [id, no, category, desc || 'No description provided.', 'Open', priority, assignee, raisedBy, date, 24],
+
+    // The id is max+1; two concurrent requests can pick the same one, so a
+    // duplicate-key failure just retries with the next number.
+    let id;
+    let seq;
+    for (let attempt = 0; ; attempt++) {
+      const [{ maxid }] = await query(
+        "SELECT COALESCE(MAX(CAST(SUBSTRING(id,5) AS UNSIGNED)),1005) AS maxid FROM tickets",
       );
-      await c.execute(
-        'INSERT INTO ticket_activity (ticket_id,date,text,seq) VALUES (?,?,?,0)',
-        [id, date, `Ticket created by ${raisedBy}, priority set to ${priority}, assigned to ${assignee}.`],
-      );
-    });
+      seq = Number(maxid) + 1;
+      id = 'TCK-' + seq;
+      try {
+        await withConn(async (c) => {
+          await c.execute(
+            `INSERT INTO tickets (id,no,category,description,status,priority,assignee,raised_by,raised_date,sla_hours,resolved_date)
+             VALUES (?,?,?,?,?,?,?,?,?,?,NULL)`,
+            [id, no, category, desc || 'No description provided.', 'Open', priority, assignee, raisedBy, date, 24],
+          );
+          await c.execute(
+            'INSERT INTO ticket_activity (ticket_id,date,text,seq) VALUES (?,?,?,0)',
+            [id, date, `Ticket created by ${raisedBy}, priority set to ${priority}, assigned to ${assignee}.`],
+          );
+        });
+        break;
+      } catch (e) {
+        if (e.code !== 'ER_DUP_ENTRY' || attempt >= 5) throw e;
+      }
+    }
     res.json({ ticket: await loadTicket(id), seq });
   } catch (e) {
     next(e);
@@ -57,20 +84,41 @@ r.post('/tickets', requireAuth, async (req, res, next) => {
 
 r.post('/tickets/:id/comments', requireAuth, async (req, res, next) => {
   try {
-    const { author, role = '', text } = req.body || {};
     const id = req.params.id;
+    const { author, text } = req.body || {};
+    if (!text || !String(text).trim()) return res.status(400).json({ error: 'text is required' });
+    const [t] = await query('SELECT * FROM tickets WHERE id=?', [id]);
+    if (!t) return res.status(404).json({ error: 'ticket not found' });
+    if (!(await canAccessInvoice(req.session, t.no))) return res.status(403).json({ error: 'Not your ticket.' });
+
+    const isSupplier = req.session.authType === 'supplier';
+    // a supplier can't post as an internal role (or vice versa)
+    const role = isSupplier ? 'Supplier' : (req.body.role && req.body.role !== 'Supplier' ? req.body.role : '');
     const date = req.body.date || todayStr();
     const [{ n }] = await query('SELECT COUNT(*) AS n FROM ticket_comments WHERE ticket_id=?', [id]);
     const [{ a }] = await query('SELECT COUNT(*) AS a FROM ticket_activity WHERE ticket_id=?', [id]);
+
     await withConn(async (c) => {
       await c.execute(
         'INSERT INTO ticket_comments (ticket_id,author,role,date,text,seq) VALUES (?,?,?,?,?,?)',
-        [id, author, role, date, text, n],
+        [id, author || (isSupplier ? 'Supplier' : 'Internal'), role, date, text, n],
       );
-      await c.execute(
+      let seq = Number(a);
+      const log = (line) => c.execute(
         'INSERT INTO ticket_activity (ticket_id,date,text,seq) VALUES (?,?,?,?)',
-        [id, date, `Comment added by ${author}${role ? ` (${role})` : ''}.`, a],
+        [id, date, line, seq++],
       );
+      await log(`Comment added by ${author || 'user'}${role ? ` (${role})` : ''}.`);
+
+      // Same status rules the client applies optimistically, so the server copy
+      // that comes back agrees with what the user just saw.
+      if (isSupplier && t.status === 'Resolved') {
+        await c.execute("UPDATE tickets SET status='In Progress', resolved_date=NULL WHERE id=?", [id]);
+        await log('Reopened to In Progress after a supplier reply.');
+      } else if (!isSupplier && t.status === 'Open') {
+        await c.execute("UPDATE tickets SET status='In Progress' WHERE id=?", [id]);
+        await log('Status changed to In Progress.');
+      }
     });
     res.json(await loadTicket(id));
   } catch (e) {
@@ -78,7 +126,8 @@ r.post('/tickets/:id/comments', requireAuth, async (req, res, next) => {
   }
 });
 
-r.patch('/tickets/:id', requireAuth, async (req, res, next) => {
+// Status / priority / assignee changes are an internal editing action.
+r.patch('/tickets/:id', requireCap('editRows'), async (req, res, next) => {
   try {
     const { status, priority, assignee, resolvedDate, activity } = req.body || {};
     const id = req.params.id;

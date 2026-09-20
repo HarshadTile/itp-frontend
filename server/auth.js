@@ -2,8 +2,10 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from './db.js';
 
-export const hashPassword = (s) => bcrypt.hashSync(s, 10);
 export const verifyPassword = (s, hash) => bcrypt.compareSync(s, hash);
+
+// Sessions older than this are rejected (and lazily deleted).
+export const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS) || 12;
 
 function parseJson(v) {
   if (v == null) return null;
@@ -21,7 +23,10 @@ export async function createSession({ userId = null, authType, scope = null, sup
 
 export async function getSession(token) {
   if (!token) return null;
-  const rows = await query('SELECT * FROM sessions WHERE token=?', [token]);
+  const rows = await query(
+    `SELECT * FROM sessions WHERE token=? AND created_at > (NOW() - INTERVAL ${Number(SESSION_TTL_HOURS)} HOUR)`,
+    [token],
+  );
   if (!rows.length) return null;
   const r = rows[0];
   return {
@@ -37,6 +42,12 @@ export async function deleteSession(token) {
   await query('DELETE FROM sessions WHERE token=?', [token]);
 }
 
+/** The role a session acts as. Mirrors buildAuthPayload in serializers.js. */
+export function roleFor(session) {
+  if (session.authType === 'supplier') return 'Viewer';
+  return session.scope?.channelScope === 'internalTeam' ? 'MDE Invoice Team' : 'Admin';
+}
+
 export async function requireAuth(req, res, next) {
   try {
     const header = req.get('authorization') || '';
@@ -49,3 +60,27 @@ export async function requireAuth(req, res, next) {
     return next(e);
   }
 }
+
+/** Authenticated, internal (non-supplier) session only. */
+export async function requireInternal(req, res, next) {
+  return requireAuth(req, res, (err) => {
+    if (err) return next(err);
+    if (req.session.authType !== 'internal') return res.status(403).json({ error: 'Not permitted for supplier logins.' });
+    return next();
+  });
+}
+
+/** Authenticated internal session whose role holds the given capability in the
+ *  role matrix stored in the settings table (e.g. 'editRows', 'manageUsers'). */
+export const requireCap = (cap) => async (req, res, next) => requireInternal(req, res, async (err) => {
+  if (err) return next(err);
+  try {
+    const [s] = await query('SELECT role_matrix_json FROM settings WHERE id=1');
+    const matrix = s ? parseJson(s.role_matrix_json) : {};
+    const perm = matrix[roleFor(req.session)];
+    if (!perm || !perm[cap]) return res.status(403).json({ error: 'Your role is not permitted to do this.' });
+    return next();
+  } catch (e) {
+    return next(e);
+  }
+});

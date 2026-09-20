@@ -6,6 +6,7 @@
 // extension-less imports that only Vite resolves.
 import { VENDOR_CODE_MAP } from '../src/data/constants.js';
 import { INVOICE_DATA } from '../src/data/invoices.js';
+import { query } from './db.js';
 
 function hashIdx(str, mod) {
   let h = 0;
@@ -26,6 +27,16 @@ const PAN_MASTER = {};
 export function panFor(supplier) {
   if (!PAN_MASTER[supplier]) PAN_MASTER[supplier] = synthPAN(supplier);
   return PAN_MASTER[supplier];
+}
+
+/** Resolve a vendor code (case-insensitive) to { vcode, vendor } from the
+ *  invoice table or the vendor-code master. Returns null for unknown codes. */
+export async function supplierForCode(code) {
+  const wanted = String(code).trim().toUpperCase();
+  const rows = await query('SELECT vcode, vendor FROM invoices WHERE UPPER(vcode)=? LIMIT 1', [wanted]);
+  if (rows.length) return { vcode: rows[0].vcode, vendor: rows[0].vendor };
+  const hit = VENDOR_CODE_MAP.rows.find((r) => r[0].toUpperCase() === wanted);
+  return hit ? { vcode: hit[0], vendor: hit[1] } : null;
 }
 
 export function vendorCodesFor(supplier) {

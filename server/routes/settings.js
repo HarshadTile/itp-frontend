@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { requireAuth, requireInternal, roleFor } from '../auth.js';
 
 const r = Router();
 
@@ -28,9 +28,17 @@ r.get('/settings', requireAuth, async (_req, res, next) => {
   }
 });
 
-r.put('/settings', requireAuth, async (req, res, next) => {
+r.put('/settings', requireInternal, async (req, res, next) => {
   try {
     const { roleMatrix, twoFactorOn, senderEmail } = req.body || {};
+    // Changing who-can-do-what needs the manageUsers capability; the sender
+    // address is mail configuration (manageConfig). 2FA is a personal toggle.
+    const needs = roleMatrix !== undefined ? 'manageUsers' : senderEmail !== undefined ? 'manageConfig' : null;
+    if (needs) {
+      const [cur] = await query('SELECT role_matrix_json FROM settings WHERE id=1');
+      const perm = parseJson(cur.role_matrix_json)[roleFor(req.session)];
+      if (!perm || !perm[needs]) return res.status(403).json({ error: 'Your role is not permitted to do this.' });
+    }
     const sets = [];
     const vals = [];
     if (roleMatrix !== undefined) { sets.push('role_matrix_json=?'); vals.push(JSON.stringify(roleMatrix)); }

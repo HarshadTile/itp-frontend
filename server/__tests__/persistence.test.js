@@ -56,7 +56,8 @@ describe('persistence', () => {
     const fresh = await request(createApp()).get('/api/bootstrap').set(auth());
     const t = fresh.body.tickets.find((x) => x.id === 'TCK-1002');
     expect(t.comments.at(-1).text).toBe('checking now');
-    expect(t.activity.at(-1).text).toMatch(/Comment added/);
+    expect(t.activity.some((a) => /Comment added/.test(a.text))).toBe(true);
+    expect(t.status).toBe('In Progress'); // internal reply picks up an Open ticket
   });
 
   it('an invoice stage move persists', async () => {
