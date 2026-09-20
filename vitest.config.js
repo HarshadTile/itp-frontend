@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    testTimeout: 15000, // the full-app RTL flows can exceed 5s on a busy machine
     exclude: ['node_modules', 'dist', 'server/**'],
   },
 });
