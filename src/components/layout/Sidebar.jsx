@@ -1,7 +1,8 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CHANNELS, LOGIN_CHANNELS } from '../../data/constants';
-import { openModal, toggleNavExpanded } from '../../features/ui/uiSlice';
+import { toggleNavExpanded } from '../../features/ui/uiSlice';
+import { askLogout } from '../../features/auth/logoutPrompt';
 import { selectPerm } from '../../features/auth/authSlice';
 import {
   FileText, Search, Layers, Building, MessageSquare, BarChart3, History,
@@ -34,15 +35,7 @@ export default function Sidebar() {
   const expandedNav = useSelector((s) => s.ui.expandedNav);
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
   const isOpen = (id) => expandedNav.includes(id);
-  const askLogout = () => dispatch(openModal({
-    kind: 'confirm',
-    ctx: {
-      title: 'Log Out',
-      message: 'Log out of this workspace? Any saved changes will remain available after you sign in again.',
-      confirmLabel: 'Log Out',
-      action: { type: 'logout' },
-    },
-  }));
+  const logout = () => dispatch(askLogout());
 
   if (authType === 'supplier') {
     const code = supplierLoginVcode;
@@ -58,7 +51,7 @@ export default function Sidebar() {
           </nav>
           <div className="nav-bottom">
             <NavItem icon={<User />} label="My Profile" active={isActive('/supplier/profile')} onClick={() => navigate('/supplier/profile')} />
-            <NavItem icon={<LogOut />} label="Logout" onClick={askLogout} />
+            <NavItem icon={<LogOut />} label="Logout" onClick={logout} />
           </div>
         </div>
       </aside>
@@ -132,7 +125,7 @@ export default function Sidebar() {
             </>
           )}
           <NavItem icon={<User />} label="Profile" active={isActive('/app/profile')} onClick={() => navigate('/app/profile')} />
-          <NavItem icon={<LogOut />} label="Logout" onClick={askLogout} />
+          <NavItem icon={<LogOut />} label="Logout" onClick={logout} />
         </div>
       </div>
     </aside>

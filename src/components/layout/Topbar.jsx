@@ -2,10 +2,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CHANNELS } from '../../data/constants';
 import { suppliersFromRuntime } from '../../data/runtime';
-import { vendorCodesFor, panFor } from '../../utils/businessLogic';
+import { vendorCodesFor } from '../../utils/businessLogic';
 import { switchIdentity } from '../../features/auth/authSlice';
 import { pushToast, resetFiltersOnIdentitySwitch, toggleSidebar } from '../../features/ui/uiSlice';
 import { Search, Bell, HelpCircle, ChevronDown, Menu } from '../common/icons.jsx';
+import UserMenu from './UserMenu.jsx';
 
 const SETTINGS_LABEL = {
   integrations: 'Integration Settings', notifications: 'Notifications', auditLogs: 'Audit Logs',
@@ -35,12 +36,10 @@ export default function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
-  const { authType, channelScope, supplierLoginVcode, supplierQuery, currentUser } = useSelector((s) => s.auth);
+  const { authType, channelScope, supplierLoginVcode } = useSelector((s) => s.auth);
 
   const identityValue = authType === 'supplier' ? `supplier:${supplierLoginVcode}` : `internal:${channelScope}`;
   const crumb = crumbFor(location.pathname, params);
-  const avatarText = authType === 'supplier' ? panFor(supplierQuery).slice(0, 2) : currentUser.initials;
-  const userName = authType === 'supplier' ? supplierQuery : currentUser.name;
 
   function handleIdentityChange(e) {
     const val = e.target.value;
@@ -108,11 +107,7 @@ export default function Topbar() {
           <HelpCircle size={18} />
         </button>
 
-        <button type="button" className="avatar" title={userName}
-          aria-label={`Signed in as ${userName}`}
-          onClick={() => navigate(authType === 'supplier' ? '/supplier/profile' : '/app/profile')}>
-          {avatarText}
-        </button>
+        <UserMenu />
       </div>
     </header>
   );

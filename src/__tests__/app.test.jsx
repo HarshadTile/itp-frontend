@@ -313,6 +313,28 @@ describe('Internal admin - full navigation', () => {
     expect(await screen.findByText(/1 result/)).toBeInTheDocument();
   });
 
+  it('avatar menu shows the account, opens Profile and logs out', async () => {
+    const { user } = await loginAdmin();
+    await user.click(screen.getByRole('button', { name: /Account menu for Ravi Kulkarni/ }));
+    const menu = screen.getByRole('menu');
+    expect(within(menu).getByText('Ravi Kulkarni')).toBeInTheDocument();
+    expect(within(menu).getByText('r.kulkarni@company.com')).toBeInTheDocument();
+    expect(within(menu).getByText(/Admin · All Channels/)).toBeInTheDocument();
+
+    await user.click(within(menu).getByRole('menuitem', { name: 'Profile' }));
+    expect(await screen.findByRole('heading', { name: 'User Profile' })).toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument(); // closed by navigating
+
+    await user.click(screen.getByRole('button', { name: /Account menu for/ }));
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Account menu for/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }));
+    await user.click(await screen.findByRole('button', { name: 'Log Out' }));
+    expect(await screen.findByText('Sign in to Invoice to Payment Tracker')).toBeInTheDocument();
+  });
+
   it('logs out and returns to login screen', async () => {
     const { user } = await loginAdmin();
     await user.click(screen.getByText('Logout'));
