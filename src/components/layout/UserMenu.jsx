@@ -53,6 +53,9 @@ export default function UserMenu() {
             <div className="user-menu-who">
               <b>{name}</b>
               <span className="user-menu-email">{email}</span>
+              {!isSupplier && currentUser.username && (
+                <span className="user-menu-email">Login ID: <b>{currentUser.username}</b></span>
+              )}
               <span className="chip gray">{detail}</span>
             </div>
           </div>

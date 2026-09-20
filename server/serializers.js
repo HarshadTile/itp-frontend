@@ -35,6 +35,7 @@ export function buildAuthPayload(session, userRow = null) {
     supplierLoginVcode: null,
     currentUser: userRow
       ? {
+          username: userRow.username,
           name: userRow.name,
           initials: initialsOf(userRow.name),
           title: userRow.title,

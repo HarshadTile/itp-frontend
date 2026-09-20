@@ -319,6 +319,7 @@ describe('Internal admin - full navigation', () => {
     const menu = screen.getByRole('menu');
     expect(within(menu).getByText('Ravi Kulkarni')).toBeInTheDocument();
     expect(within(menu).getByText('r.kulkarni@company.com')).toBeInTheDocument();
+    expect(within(menu).getByText('admin')).toBeInTheDocument(); // the login ID that was typed
     expect(within(menu).getByText(/Admin · All Channels/)).toBeInTheDocument();
 
     await user.click(within(menu).getByRole('menuitem', { name: 'Profile' }));

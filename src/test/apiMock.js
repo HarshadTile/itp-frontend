@@ -42,7 +42,7 @@ function authFor(form) {
     authType: 'internal', channelScope,
     role: channelScope === 'all' ? 'Admin' : 'MDE Invoice Team',
     supplierQuery: null, supplierPAN: null, supplierLoginVcode: null,
-    currentUser: DEFAULT_USER,
+    currentUser: { ...DEFAULT_USER, username: String(form.username || '').toLowerCase() },
   };
 }
 
