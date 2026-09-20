@@ -27,7 +27,7 @@ mysql -u root -p mahindra_i2p
    `users` table; a bad password is rejected by the server, not the browser.
 
 2. **Data comes from MySQL.** The Invoice Tracking page is populated by
-   `GET /api/bootstrap` → `SELECT * FROM invoices`. Nothing is hard-coded.
+   `GET /api/workspace` → `SELECT * FROM invoices`. Nothing is hard-coded.
 
 3. **Advance an invoice.** Invoice Tracking → click `INV-MS-1003` → *Mark
    Approved* (then *Mark Booked*, …; the last step asks for a UTR). Each click

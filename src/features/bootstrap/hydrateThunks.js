@@ -8,7 +8,7 @@ import { bumpData } from '../ui/uiSlice';
 
 /** Pull the whole dataset from the API and push it into the store + runtime. */
 export const loadBootstrap = () => async (dispatch) => {
-  const b = await api.get('/bootstrap');
+  const b = await api.get('/workspace');
   setRuntimeData({ invoices: b.invoices, syncLog: b.syncLog });
   dispatch(bumpData()); // memoised invoice selectors must re-read the new data
   dispatch(hydrateTickets({ items: b.tickets, seq: b.ticketSeq }));
@@ -20,7 +20,7 @@ export const loadBootstrap = () => async (dispatch) => {
 /** Sign in, store the token, hydrate. Throws on bad credentials.
  *  `opts.remember === false` keeps the session in sessionStorage only. */
 export const loginThunk = (form, opts = {}) => async (dispatch) => {
-  const { token, auth } = await api.post('/login', form);
+  const { token, auth } = await api.post('/auth/login', form);
   api.setToken(token, { persist: opts.remember !== false });
   // Load the data BEFORE flipping to "logged in": the route guards redirect into
   // the app the moment auth flips, and pages must not render (and cache) an empty
@@ -38,7 +38,7 @@ export const loginThunk = (form, opts = {}) => async (dispatch) => {
 export const restoreSession = () => async (dispatch) => {
   if (!api.hasToken()) return false;
   try {
-    const { auth } = await api.get('/me');
+    const { auth } = await api.get('/auth/me');
     dispatch(setAuthFromServer(auth));
     await dispatch(loadBootstrap());
     return true;
@@ -51,7 +51,7 @@ export const restoreSession = () => async (dispatch) => {
 /** Invalidate the session server-side, then clear local auth. */
 export const logoutThunk = () => async (dispatch) => {
   try {
-    await api.post('/logout');
+    await api.post('/auth/logout');
   } catch {
     /* token already gone / server down — clear locally anyway */
   }

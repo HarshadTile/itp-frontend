@@ -50,10 +50,12 @@ A small Express API (`server/`) owns a MySQL database, `mahindra_i2p`:
 | `table_rows` | the editable Settings grids (users, notification rules, audit) |
 | `settings`, `sync_log`, `integrations` | role matrix, 2FA, sync history, connectors |
 
-The React app loads everything once after login (`GET /api/bootstrap`) and every
+The React app loads everything once after login (`GET /api/workspace`) and every
 in-app change (raise a ticket, drag a Kanban card, toggle a permission, advance
 an invoice stage) is written straight back to MySQL, so it survives a restart.
 Re-run `npm run seed` at any time to reset to the demo dataset.
+
+The full endpoint list is in [docs/API.md](docs/API.md).
 
 ### Access control (enforced by the API, not just the UI)
 

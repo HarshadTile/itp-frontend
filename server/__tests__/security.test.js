@@ -9,7 +9,7 @@ const tokens = {};
 const h = (k) => ({ Authorization: `Bearer ${tokens[k]}` });
 
 async function login(body) {
-  const res = await request(app).post('/api/login').send(body);
+  const res = await request(app).post('/api/auth/login').send(body);
   expect(res.status).toBe(200);
   return res.body.token;
 }
@@ -25,7 +25,7 @@ afterAll(async () => { await closePools(); });
 
 describe('supplier data scoping', () => {
   it('bootstrap only returns the supplier\'s own vendor code and its tickets', async () => {
-    const res = await request(app).get('/api/bootstrap').set(h('supplier'));
+    const res = await request(app).get('/api/workspace').set(h('supplier'));
     expect(res.status).toBe(200);
     expect(res.body.invoices.length).toBeGreaterThan(0);
     expect(res.body.invoices.every((i) => i.vcode === 'DIT00388AC')).toBe(true);

@@ -68,8 +68,8 @@ export function installApiMock() {
   });
 
   const get = vi.fn(async (path) => {
-    if (path === '/bootstrap') return bootstrap();
-    if (path === '/me') throw Object.assign(new Error('no session'), { status: 401 });
+    if (path === '/workspace') return bootstrap();
+    if (path === '/auth/me') throw Object.assign(new Error('no session'), { status: 401 });
     if (path.startsWith('/tables/')) return TABLE_SEED[path.slice('/tables/'.length)] || [];
     if (path === '/settings') return bootstrap().settings;
     return {};
@@ -78,7 +78,7 @@ export function installApiMock() {
   const CREDS = { admin: 'admin123', priya: 'priya123' };
 
   const post = vi.fn(async (path, body) => {
-    if (path === '/login') {
+    if (path === '/auth/login') {
       const form = body || {};
       if (form.mode !== 'supplier') {
         const u = String(form.username || '').toLowerCase();
@@ -88,7 +88,7 @@ export function installApiMock() {
       }
       return { token: 'test-token', auth: authFor(form) };
     }
-    if (path === '/logout') return { ok: true };
+    if (path === '/auth/logout') return { ok: true };
     if (path === '/tickets') {
       seq += 1;
       const id = 'TCK-' + seq;

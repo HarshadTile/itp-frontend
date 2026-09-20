@@ -2,7 +2,7 @@ import { pathToFileURL } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
-import bootstrapRoutes from './routes/bootstrap.js';
+import workspaceRoutes from './routes/workspace.js';
 import invoiceRoutes from './routes/invoices.js';
 import dashboardRoutes from './routes/dashboard.js';
 import ticketRoutes from './routes/tickets.js';
@@ -15,8 +15,8 @@ export function createApp() {
   app.use(express.json());
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
-  app.use('/api', authRoutes);
-  app.use('/api', bootstrapRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api', workspaceRoutes);
   app.use('/api', invoiceRoutes);
   app.use('/api', dashboardRoutes);
   app.use('/api', ticketRoutes);

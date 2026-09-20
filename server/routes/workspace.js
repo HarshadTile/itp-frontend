@@ -9,7 +9,8 @@ function parseJson(v) {
   return typeof v === 'string' ? JSON.parse(v) : v;
 }
 
-r.get('/bootstrap', requireAuth, async (req, res, next) => {
+/* GET /api/workspace — everything the app loads once after sign-in. */
+r.get('/workspace', requireAuth, async (req, res, next) => {
   try {
     // A supplier login only ever receives its own vendor code's invoices, the
     // tickets raised on them, and none of the internal admin tables.

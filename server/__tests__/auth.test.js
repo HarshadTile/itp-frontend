@@ -14,7 +14,7 @@ afterAll(async () => { await closePools(); });
 describe('auth', () => {
   it('logs in with correct internal credentials', async () => {
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'admin', password: 'admin123', channelScope: 'all' });
     expect(res.status).toBe(200);
     expect(res.body.token).toBeTruthy();
@@ -25,7 +25,7 @@ describe('auth', () => {
 
   it('maps the internalTeam scope to the MDE Invoice Team role', async () => {
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'priya', password: 'priya123', channelScope: 'internalTeam' });
     expect(res.status).toBe(200);
     expect(res.body.auth.channelScope).toBe('internalTeam');
@@ -35,37 +35,37 @@ describe('auth', () => {
   it('rejects a wrong password and creates no session', async () => {
     const [{ n: before }] = await query('SELECT COUNT(*) AS n FROM sessions');
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'admin', password: 'nope' });
     expect(res.status).toBe(401);
     const [{ n: after }] = await query('SELECT COUNT(*) AS n FROM sessions');
     expect(after).toBe(before);
   });
 
-  it('GET /api/me works with a valid token and 401s without one', async () => {
+  it('GET /api/auth/me works with a valid token and 401s without one', async () => {
     const login = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'admin', password: 'admin123' });
-    const ok = await request(app).get('/api/me').set('Authorization', `Bearer ${login.body.token}`);
+    const ok = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${login.body.token}`);
     expect(ok.status).toBe(200);
     expect(ok.body.auth.role).toBe('Admin');
 
-    const no = await request(app).get('/api/me');
+    const no = await request(app).get('/api/auth/me');
     expect(no.status).toBe(401);
   });
 
   it('logout deletes the session so the token stops working', async () => {
     const login = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'admin', password: 'admin123' });
     const token = login.body.token;
-    await request(app).post('/api/logout').set('Authorization', `Bearer ${token}`).expect(200);
-    await request(app).get('/api/me').set('Authorization', `Bearer ${token}`).expect(401);
+    await request(app).post('/api/auth/logout').set('Authorization', `Bearer ${token}`).expect(200);
+    await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`).expect(401);
   });
 
   it('supplier login needs no password and resolves the supplier from the vendor code', async () => {
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'supplier', vcode: 'dit00388ac', company: 'Ignored Corp' });
     expect(res.status).toBe(200);
     expect(res.body.auth.authType).toBe('supplier');
@@ -76,26 +76,26 @@ describe('auth', () => {
 
   it('rejects an unknown vendor code and creates no session', async () => {
     const [{ n: before }] = await query('SELECT COUNT(*) AS n FROM sessions');
-    const res = await request(app).post('/api/login').send({ mode: 'supplier', vcode: 'NOPE999' });
+    const res = await request(app).post('/api/auth/login').send({ mode: 'supplier', vcode: 'NOPE999' });
     expect(res.status).toBe(401);
     expect(res.body.error).toMatch(/Invalid vendor code/);
     const [{ n: after }] = await query('SELECT COUNT(*) AS n FROM sessions');
     expect(after).toBe(before);
-    await request(app).post('/api/login').send({ mode: 'supplier' }).expect(400);
+    await request(app).post('/api/auth/login').send({ mode: 'supplier' }).expect(400);
   });
 
   it('only Admin accounts may use the all-channels scope', async () => {
     const res = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'priya', password: 'priya123', channelScope: 'all' });
     expect(res.status).toBe(403);
   });
 
   it('rejects an expired session', async () => {
     const login = await request(app)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({ mode: 'internal', username: 'admin', password: 'admin123' });
     await query("UPDATE sessions SET created_at = NOW() - INTERVAL 13 HOUR WHERE token=?", [login.body.token]);
-    await request(app).get('/api/me').set('Authorization', `Bearer ${login.body.token}`).expect(401);
+    await request(app).get('/api/auth/me').set('Authorization', `Bearer ${login.body.token}`).expect(401);
   });
 });
