@@ -17,7 +17,8 @@ const ALL_SYNC = [...SYNC_LOG, ...buildExtraSyncLog()];
 
 // Login accounts. Passwords are bcrypt-hashed on insert.
 const USERS = [
-  ['admin', 'admin123', 'Ravi Kulkarni', 'r.kulkarni@company.com', 'Admin', 'Procurement', 'MDE Invoice Lead'],
+  ['admin', 'admin123', 'Administrator', 'admin@company.com', 'Admin', 'IT', 'System Administrator'],
+  ['ravi', 'ravi123', 'Ravi Kulkarni', 'r.kulkarni@company.com', 'Admin', 'Procurement', 'MDE Invoice Lead'],
   ['priya', 'priya123', 'Priya Deshmukh', 'p.deshmukh@company.com', 'MDE Invoice Team', 'Procurement', 'Invoice Processor'],
   ...buildExtraUsers(),
 ];
@@ -25,6 +26,7 @@ const USERS = [
 // Editable grids shown under Settings.
 const TABLE_ROWS = {
   'settings-users': [
+    ['Administrator', 'admin@company.com', 'System Administrator', 'IT', 'Admin', 'Active'],
     ['Ravi Kulkarni', 'r.kulkarni@company.com', 'MDE Invoice Lead', 'Procurement', 'Admin', 'Active'],
     ['Priya Deshmukh', 'p.deshmukh@company.com', 'Invoice Processor', 'Procurement', 'MDE Invoice Team', 'Active'],
     ['Ajay Menon', 'a.menon@company.com', 'Category Approver', 'Sourcing', 'Approver', 'Active'],

@@ -317,7 +317,7 @@ describe('Internal admin - full navigation', () => {
     const user = userEvent.setup();
     renderApp(freshStore());
     await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'r.kulkarni@company.com');
-    await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'ravi123');
     await user.click(screen.getByRole('button', { name: 'Login' }));
     await screen.findByRole('heading', { name: 'Invoice Tracking' });
     await user.click(screen.getByRole('button', { name: 'Account menu for Ravi Kulkarni' }));
@@ -330,8 +330,8 @@ describe('Internal admin - full navigation', () => {
     await user.click(screen.getByRole('button', { name: 'Account menu for admin' }));
     const menu = screen.getByRole('menu');
     expect(within(menu).getByText('admin')).toBeInTheDocument();
-    expect(within(menu).getByText('r.kulkarni@company.com')).toBeInTheDocument();
-    expect(within(menu).queryByText('Ravi Kulkarni')).not.toBeInTheDocument();
+    expect(within(menu).getByText('admin@company.com')).toBeInTheDocument(); // the admin account's own email
+    expect(within(menu).queryByText('Administrator')).not.toBeInTheDocument();
     expect(within(menu).getByText(/Admin · All Channels/)).toBeInTheDocument();
 
     await user.click(within(menu).getByRole('menuitem', { name: 'Profile' }));

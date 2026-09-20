@@ -31,12 +31,13 @@ npm run lint         # oxlint
 
 ### Demo logins (verified against the database)
 
-- **Internal** — `admin` / `admin123` (Admin; either portal scope) or `priya` / `priya123`
+- **Internal** — `admin` / `admin123` (Administrator, admin@company.com; either portal scope),
+  `ravi` / `ravi123` (Ravi Kulkarni, Admin) or `priya` / `priya123`
   (MDE Invoice Team; **Internal Team** scope only — the All Channels scope is
   reserved for Admin accounts and is refused by the server for anyone else).
   You can sign in with either the **username** or the account's **e-mail**
-  (e.g. `admin` or `r.kulkarni@company.com`). The app then shows what you signed
-  in with: `admin` shows "admin", the e-mail shows "Ravi Kulkarni" (the Profile
+  (e.g. `admin` or `admin@company.com`). The app then shows what you signed
+  in with: `admin` shows "admin", the e-mail shows "Administrator" (the Profile
   page always lists the full name).
 - **Supplier** — enter a vendor code that exists in the data (e.g. `DIT00388AC`,
   `BSC00021`). There is no password (OTP is not implemented); an unknown code is

@@ -31,15 +31,21 @@ const DEFAULT_USER = {
 
 // Same rule as the server: signing in with the username shows the username,
 // signing in with the e-mail shows the account holder's name.
+const ACCOUNTS = {
+  admin: { ...DEFAULT_USER, name: 'Administrator', initials: 'AD', title: 'System Administrator', dept: 'IT', email: 'admin@company.com' },
+  ravi: DEFAULT_USER,
+};
 function internalUser(loginId) {
-  const byEmail = loginId === DEFAULT_USER.email;
-  const name = byEmail ? DEFAULT_USER.name : loginId;
+  const key = Object.keys(ACCOUNTS).find((k) => k === loginId || ACCOUNTS[k].email === loginId) || 'admin';
+  const acct = ACCOUNTS[key];
+  const byEmail = loginId === acct.email;
+  const name = byEmail ? acct.name : loginId;
   return {
-    ...DEFAULT_USER,
-    username: 'admin',
-    fullName: DEFAULT_USER.name,
+    ...acct,
+    username: key,
+    fullName: acct.name,
     name,
-    initials: byEmail ? DEFAULT_USER.initials : name.slice(0, 2).toUpperCase(),
+    initials: byEmail ? acct.initials : name.slice(0, 2).toUpperCase(),
   };
 }
 
@@ -89,7 +95,7 @@ export function installApiMock() {
     return {};
   });
 
-  const CREDS = { admin: 'admin123', priya: 'priya123', 'r.kulkarni@company.com': 'admin123' };
+  const CREDS = { admin: 'admin123', 'admin@company.com': 'admin123', ravi: 'ravi123', 'r.kulkarni@company.com': 'ravi123', priya: 'priya123' };
 
   const post = vi.fn(async (path, body) => {
     if (path === '/auth/login') {

@@ -20,7 +20,7 @@ describe('auth', () => {
     expect(res.body.token).toBeTruthy();
     expect(res.body.auth.authType).toBe('internal');
     expect(res.body.auth.role).toBe('Admin');
-    expect(res.body.auth.currentUser.email).toBe('r.kulkarni@company.com');
+    expect(res.body.auth.currentUser.email).toBe('admin@company.com');
     expect(res.body.auth.currentUser.name).toBe('admin');
   });
 
@@ -29,10 +29,11 @@ describe('auth', () => {
       .send({ mode: 'internal', username: 'admin', password: 'admin123' });
     expect(byUser.body.auth.currentUser.name).toBe('admin');
     expect(byUser.body.auth.currentUser.initials).toBe('AD');
-    expect(byUser.body.auth.currentUser.fullName).toBe('Ravi Kulkarni');
+    expect(byUser.body.auth.currentUser.fullName).toBe('Administrator');
+    expect(byUser.body.auth.currentUser.email).toBe('admin@company.com');
 
     const byMail = await request(app).post('/api/auth/login')
-      .send({ mode: 'internal', username: 'R.Kulkarni@company.com', password: 'admin123' });
+      .send({ mode: 'internal', username: 'R.Kulkarni@company.com', password: 'ravi123' });
     expect(byMail.status).toBe(200);
     expect(byMail.body.auth.currentUser.name).toBe('Ravi Kulkarni');
     expect(byMail.body.auth.currentUser.initials).toBe('RK');
@@ -44,7 +45,7 @@ describe('auth', () => {
     expect(meUser.body.auth.currentUser.name).toBe('admin');
 
     await request(app).post('/api/auth/login')
-      .send({ mode: 'internal', username: 'r.kulkarni@company.com', password: 'wrong' }).expect(401);
+      .send({ mode: 'internal', username: 'r.kulkarni@company.com', password: 'admin123' }).expect(401); // ravi has his own password
   });
 
   it('maps the internalTeam scope to the MDE Invoice Team role', async () => {
