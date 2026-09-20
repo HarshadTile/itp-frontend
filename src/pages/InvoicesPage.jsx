@@ -32,7 +32,7 @@ function shadeByRank(items) {
 }
 
 /* Aggregate the (already-loaded) invoice list into the same small shape the
-   /invoices/summary endpoint returns — used as an offline fallback. */
+   /dashboard/summary endpoint returns — used as an offline fallback. */
 function aggregate(invoices) {
   const count = (fn) => invoices.filter(fn).length;
   return {
@@ -75,11 +75,11 @@ export default function InvoicesPage() {
     const scope = isScoped ? 'scope=internalTeam' : '';
     (async () => {
       try {
-        const s = await api.get(`/invoices/summary${scope ? `?${scope}` : ''}`);
+        const s = await api.get(`/dashboard/summary${scope ? `?${scope}` : ''}`);
         if (alive && s && s.kpi) setSummary({ key: fetchKey, data: s });
       } catch { /* fall back */ }
       try {
-        const r = await api.get(`/invoices/recent?limit=${RECENT_LIMIT}${scope ? `&${scope}` : ''}`);
+        const r = await api.get(`/dashboard/latest-invoices?count=${RECENT_LIMIT}${scope ? `&${scope}` : ''}`);
         if (alive && Array.isArray(r)) setRecent({ key: fetchKey, data: r });
       } catch { /* fall back */ }
     })();

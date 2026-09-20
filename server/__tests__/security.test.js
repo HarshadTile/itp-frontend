@@ -106,18 +106,18 @@ describe('invoice stage moves', () => {
 
 describe('Internal Team scope', () => {
   it('summary and recent exclude the Manual channel for an Internal Team session', async () => {
-    const all = await request(app).get('/api/invoices/summary').set(h('admin'));
-    const team = await request(app).get('/api/invoices/summary').set(h('team'));
+    const all = await request(app).get('/api/dashboard/summary').set(h('admin'));
+    const team = await request(app).get('/api/dashboard/summary').set(h('team'));
     expect(all.body.byChannel.some((c) => c.key === 'manual')).toBe(true);
     expect(team.body.byChannel.some((c) => c.key === 'manual')).toBe(false);
     expect(team.body.total).toBeLessThan(all.body.total);
-    const recent = await request(app).get('/api/invoices/recent?limit=25').set(h('team'));
+    const recent = await request(app).get('/api/dashboard/latest-invoices?count=25').set(h('team'));
     expect(recent.body.every((i) => i.channel !== 'manual')).toBe(true);
   });
 
   it('an HQ admin viewing as the Internal Team gets the same numbers via ?scope=', async () => {
-    const team = await request(app).get('/api/invoices/summary').set(h('team'));
-    const asTeam = await request(app).get('/api/invoices/summary?scope=internalTeam').set(h('admin'));
+    const team = await request(app).get('/api/dashboard/summary').set(h('team'));
+    const asTeam = await request(app).get('/api/dashboard/summary?scope=internalTeam').set(h('admin'));
     expect(asTeam.body.total).toBe(team.body.total);
   });
 });

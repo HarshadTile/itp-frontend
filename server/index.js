@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import bootstrapRoutes from './routes/bootstrap.js';
 import invoiceRoutes from './routes/invoices.js';
+import dashboardRoutes from './routes/dashboard.js';
 import ticketRoutes from './routes/tickets.js';
 import tableRoutes from './routes/tables.js';
 import settingsRoutes from './routes/settings.js';
@@ -17,6 +18,7 @@ export function createApp() {
   app.use('/api', authRoutes);
   app.use('/api', bootstrapRoutes);
   app.use('/api', invoiceRoutes);
+  app.use('/api', dashboardRoutes);
   app.use('/api', ticketRoutes);
   app.use('/api', tableRoutes);
   app.use('/api', settingsRoutes);
