@@ -29,9 +29,9 @@ mysql -u root -p mahindra_i2p
 2. **Data comes from MySQL.** The Invoice Tracking page is populated by
    `GET /api/bootstrap` → `SELECT * FROM invoices`. Nothing is hard-coded.
 
-3. **Advance an invoice.** Open `INV-MS-1003`, move it through a stage
-   (Approver Assignment / SAP Booking / Payment). This writes
-   `PATCH /api/invoices/INV-MS-1003`.
+3. **Advance an invoice.** Invoice Tracking → click `INV-MS-1003` → *Mark
+   Approved* (then *Mark Booked*, …; the last step asks for a UTR). Each click
+   writes `PATCH /api/invoices/INV-MS-1003` and the stage position follows.
 
 4. **Raise a ticket.** Inquiry Desk → raise a query on any invoice row → submit.
    Switch to the **Board** view and drag the new card from Open to In Progress.
@@ -56,8 +56,9 @@ mysql -u root -p mahindra_i2p
    session row is deleted server-side, so the browser Back button cannot
    re-enter the app.
 
-9. **Supplier view.** Log in on the Supplier tab with a company + vendor code.
-   The app re-scopes to exactly that vendor code's invoices and queries.
+9. **Supplier view.** Log in on the Supplier tab with a vendor code such as
+   `DIT00388AC` (an unknown code is rejected). The app re-scopes to exactly that
+   vendor code's invoices and queries — and the server only sends that data.
 
 ## Reset between runs
 

@@ -25,15 +25,18 @@ npm run server       # API only
 npm run dev          # web only (expects the API already running)
 npm run build        # production build to /dist
 npm run test         # client test suite (Vitest + RTL)
-npm run test:server  # server test suite (hits the local MySQL)
+npm run test:server  # server test suite (local MySQL, separate `mahindra_i2p_test` database — demo data is never touched)
 npm run lint         # oxlint
 ```
 
 ### Demo logins (verified against the database)
 
-- **Internal** — `admin` / `admin123` (Admin, All Channels) or `priya` / `priya123`
-  (MDE Invoice Team). Pick the portal scope on the login screen.
-- **Supplier** — pick a company + vendor code, any phone number (OTP is simulated).
+- **Internal** — `admin` / `admin123` (Admin; either portal scope) or `priya` / `priya123`
+  (MDE Invoice Team; **Internal Team** scope only — the All Channels scope is
+  reserved for Admin accounts and is refused by the server for anyone else).
+- **Supplier** — enter a vendor code that exists in the data (e.g. `DIT00388AC`,
+  `BSC00021`). There is no password (OTP is not implemented); an unknown code is
+  rejected, and the supplier is looked up from the code server-side.
 
 ## Database
 
@@ -52,15 +55,17 @@ in-app change (raise a ticket, drag a Kanban card, toggle a permission, advance
 an invoice stage) is written straight back to MySQL, so it survives a restart.
 Re-run `npm run seed` at any time to reset to the demo dataset.
 
-## Demo logins
+### Access control (enforced by the API, not just the UI)
 
-**Internal Team** — pick a portal scope, then sign in:
-- Username: `admin`
-- Password: `admin123`
-- Portal / Team: *All Channels (HQ / Admin)* or *Internal Team*
-
-**Supplier** — pick a company, then a vendor code (no password needed, this
-path simulates an OTP login): any company/vendor-code combination works.
+- Sessions are bearer tokens that expire after 12 hours (`SESSION_TTL_HOURS`).
+- A **supplier** session only ever receives its own vendor code's invoices and the
+  tickets on them; it can raise tickets and reply on those, and nothing else.
+- Internal writes are checked against the role matrix stored in the database:
+  moving an invoice, editing a ticket, and editing the Settings tables need
+  `editRows`; changing the role matrix needs `manageUsers`.
+- The Internal Team scope is applied server-side to the dashboard aggregates too.
+- The top-bar identity switcher is still a demo convenience: it only re-scopes the
+  *view*. The server keeps enforcing the permissions of the session you signed in with.
 
 ## What's in it
 
@@ -72,6 +77,9 @@ path simulates an OTP login): any company/vendor-code combination works.
   and history.
 - **Supplier Visibility**: browse any supplier's vendor codes and see every
   invoice against each one, individually or consolidated.
+- **Stage moves**: open any invoice (Invoice Tracking → click the invoice number)
+  and use *Move to next stage* to step it Uploaded → Pending Approval → Approved →
+  Booked → Payment Due → Paid (Paid asks for the UTR). Saved to MySQL immediately.
 - **Inquiry Desk**: a full ticketing system with SLA tracking, list and Kanban
   board views (drag a card to change its status), threaded replies, and a
   complete activity audit log.
@@ -111,8 +119,10 @@ new array, and all business rules live in plain, tested functions under
 `src/__tests__/app.test.jsx` exercises the application end-to-end with
 React Testing Library: both login flows, every navigation destination for
 every role, every modal, ticket creation and replies, the Kanban board,
-identity switching, permission toggles, user CRUD, and route guards. All 27
-tests pass with zero console warnings.
+identity switching, permission toggles, user CRUD, invoice stage moves, and
+route guards. The server suite (`npm run test:server`) covers login/logout,
+session expiry, per-role and per-supplier access control, persistence and
+concurrent ticket creation.
 
 ## Notes on scope
 
