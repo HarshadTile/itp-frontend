@@ -313,13 +313,25 @@ describe('Internal admin - full navigation', () => {
     expect(await screen.findByText(/1 result/)).toBeInTheDocument();
   });
 
+  it('signing in with the e-mail shows the full name of the account holder', async () => {
+    const user = userEvent.setup();
+    renderApp(freshStore());
+    await user.type(screen.getByPlaceholderText('Enter your Mahindra Email ID'), 'r.kulkarni@company.com');
+    await user.type(screen.getByPlaceholderText('Enter your password'), 'admin123');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    await screen.findByRole('heading', { name: 'Invoice Tracking' });
+    await user.click(screen.getByRole('button', { name: 'Account menu for Ravi Kulkarni' }));
+    expect(within(screen.getByRole('menu')).getByText('Ravi Kulkarni')).toBeInTheDocument();
+  });
+
   it('avatar menu shows the account, opens Profile and logs out', async () => {
     const { user } = await loginAdmin();
-    await user.click(screen.getByRole('button', { name: /Account menu for Ravi Kulkarni/ }));
+    // signed in with the username "admin" -> the menu shows "admin"
+    await user.click(screen.getByRole('button', { name: 'Account menu for admin' }));
     const menu = screen.getByRole('menu');
-    expect(within(menu).getByText('Ravi Kulkarni')).toBeInTheDocument();
+    expect(within(menu).getByText('admin')).toBeInTheDocument();
     expect(within(menu).getByText('r.kulkarni@company.com')).toBeInTheDocument();
-    expect(within(menu).getByText('admin')).toBeInTheDocument(); // the login ID that was typed
+    expect(within(menu).queryByText('Ravi Kulkarni')).not.toBeInTheDocument();
     expect(within(menu).getByText(/Admin · All Channels/)).toBeInTheDocument();
 
     await user.click(within(menu).getByRole('menuitem', { name: 'Profile' }));

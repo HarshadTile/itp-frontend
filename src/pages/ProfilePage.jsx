@@ -80,7 +80,7 @@ export default function ProfilePage() {
         <div className="card" style={{ flex: 1, minWidth: 'min(320px, 100%)' }}>
           <h3>Personal Information</h3>
           <div className="row">
-            <div className="form-field" style={{ flex: 1 }}><label>Full Name</label><input value={currentUser.name} readOnly /></div>
+            <div className="form-field" style={{ flex: 1 }}><label>Full Name</label><input value={currentUser.fullName || currentUser.name} readOnly /></div>
             <div className="form-field" style={{ flex: 1 }}><label>Email</label><input value={currentUser.email} readOnly /></div>
           </div>
           <div className="row">

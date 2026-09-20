@@ -29,6 +29,20 @@ const DEFAULT_USER = {
   dept: 'Procurement', email: 'r.kulkarni@company.com',
 };
 
+// Same rule as the server: signing in with the username shows the username,
+// signing in with the e-mail shows the account holder's name.
+function internalUser(loginId) {
+  const byEmail = loginId === DEFAULT_USER.email;
+  const name = byEmail ? DEFAULT_USER.name : loginId;
+  return {
+    ...DEFAULT_USER,
+    username: 'admin',
+    fullName: DEFAULT_USER.name,
+    name,
+    initials: byEmail ? DEFAULT_USER.initials : name.slice(0, 2).toUpperCase(),
+  };
+}
+
 function authFor(form) {
   if (form.mode === 'supplier') {
     return {
@@ -42,7 +56,7 @@ function authFor(form) {
     authType: 'internal', channelScope,
     role: channelScope === 'all' ? 'Admin' : 'MDE Invoice Team',
     supplierQuery: null, supplierPAN: null, supplierLoginVcode: null,
-    currentUser: { ...DEFAULT_USER, username: String(form.username || '').toLowerCase() },
+    currentUser: internalUser(String(form.username || '').trim().toLowerCase()),
   };
 }
 
@@ -75,7 +89,7 @@ export function installApiMock() {
     return {};
   });
 
-  const CREDS = { admin: 'admin123', priya: 'priya123' };
+  const CREDS = { admin: 'admin123', priya: 'priya123', 'r.kulkarni@company.com': 'admin123' };
 
   const post = vi.fn(async (path, body) => {
     if (path === '/auth/login') {

@@ -6,7 +6,25 @@ const DEFAULT_USER = {
 };
 
 function initialsOf(name) {
-  return name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const words = name.split(/[\s._-]+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase(); // "admin" -> "AD"
+  return words.map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/** The name shown for an internal user follows how they signed in: with their
+ *  username ("admin") the app shows "admin"; with their e-mail it shows the
+ *  account holder's full name. `fullName` always carries the real name. */
+function internalUser(userRow, scope) {
+  const shown = scope.loginBy === 'email' ? userRow.name : (scope.loginId || userRow.username);
+  return {
+    username: userRow.username,
+    name: shown,
+    fullName: userRow.name,
+    initials: initialsOf(shown),
+    title: userRow.title,
+    dept: userRow.dept,
+    email: userRow.email,
+  };
 }
 
 /** Build the exact object shape the client's authSlice expects. */
@@ -33,16 +51,7 @@ export function buildAuthPayload(session, userRow = null) {
     supplierQuery: null,
     supplierPAN: null,
     supplierLoginVcode: null,
-    currentUser: userRow
-      ? {
-          username: userRow.username,
-          name: userRow.name,
-          initials: initialsOf(userRow.name),
-          title: userRow.title,
-          dept: userRow.dept,
-          email: userRow.email,
-        }
-      : DEFAULT_USER,
+    currentUser: userRow ? internalUser(userRow, scope) : DEFAULT_USER,
   };
 }
 

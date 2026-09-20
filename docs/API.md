@@ -12,7 +12,7 @@ role matrix (Settings → Roles & Permissions).
 
 | Method & path | Who | Purpose | Errors |
 |---|---|---|---|
-| `POST /auth/login` | public | Sign in. Body `{ mode:'internal', username, password, channelScope }` or `{ mode:'supplier', vcode }`. Returns `{ token, auth }`. | 400 missing vendor code · 401 bad credentials / unknown vendor code · 403 non-Admin using All Channels |
+| `POST /auth/login` | public | Sign in. Body `{ mode:'internal', username, password, channelScope }` (`username` may be the username or the account e-mail; the returned `auth.currentUser.name` is the login ID when signed in by username, the full name when signed in by e-mail) or `{ mode:'supplier', vcode }`. Returns `{ token, auth }`. | 400 missing vendor code · 401 bad credentials / unknown vendor code · 403 non-Admin using All Channels |
 | `POST /auth/logout` | any | Ends the session (token stops working immediately). | 401 |
 | `GET /auth/me` | any | Current session as `{ auth }` (used to restore a session on reload). | 401 |
 

@@ -24,7 +24,12 @@ r.post('/login', async (req, res, next) => {
     }
 
     const { username, password, channelScope } = req.body;
-    const rows = await query('SELECT * FROM users WHERE username=?', [String(username || '').toLowerCase()]);
+    // The login ID can be the username (e.g. "admin") or the account's e-mail.
+    const loginId = String(username || '').trim().toLowerCase();
+    const rows = await query(
+      'SELECT * FROM users WHERE username=? OR email=? ORDER BY (username=?) DESC LIMIT 1',
+      [loginId, loginId, loginId],
+    );
     const user = rows[0];
     if (!user || !verifyPassword(password || '', user.password_hash)) {
       return res.status(401).json({ error: 'Invalid username or password.' });
@@ -34,7 +39,9 @@ r.post('/login', async (req, res, next) => {
     if (wantsAll && user.role !== 'Admin') {
       return res.status(403).json({ error: 'This account can only sign in to the Internal Team portal.' });
     }
-    const scope = { channelScope: wantsAll ? 'all' : 'internalTeam' };
+    // remember how they signed in: that decides which name the app displays
+    const loginBy = user.username.toLowerCase() === loginId ? 'username' : 'email';
+    const scope = { channelScope: wantsAll ? 'all' : 'internalTeam', loginBy, loginId };
     const token = await createSession({ userId: user.id, authType: 'internal', scope });
     const session = await getSession(token);
     return res.json({ token, auth: buildAuthPayload(session, user) });
