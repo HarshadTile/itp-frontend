@@ -27,7 +27,7 @@ export default function VendorCodePage() {
   const poCount = Object.keys(byPO).length;
   const paid = invoices.filter((i) => i.status === 'Paid').length;
   const due = invoices.filter((i) => i.status === 'Payment Due').length;
-  const inProgress = invoices.length - paid - due - invoices.filter((i) => i.status === 'Failed').length;
+  const inProgress = invoices.length - paid - due - invoices.filter((i) => i.status === 'Rejected' || i.status === 'Deleted').length;
   const byCurrency = {};
   invoices.forEach((i) => { const cur = i.amount[0]; byCurrency[cur] = (byCurrency[cur] || 0) + parseFloat(i.amount.slice(1).replace(/,/g, '')); });
 
@@ -101,8 +101,8 @@ export default function VendorCodePage() {
 function VendorCodeHistory({ code, invoices }) {
   const dispatch = useDispatch();
   const tickets = useSelector((s) => s.tickets.items);
-  const done = invoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid').length;
-  const failed = invoices.filter((i) => i.status === 'Failed').length;
+  const done = invoices.filter((i) => i.status === 'Paid').length;
+  const failed = invoices.filter((i) => i.status === 'Rejected' || i.status === 'Deleted').length;
   const ongoing = invoices.length - done - failed;
   const channelsUsed = [...new Set(invoices.map((i) => i.channel))];
   const syncLabels = channelsUsed.flatMap((k) => CHANNEL_SYNC_LABELS[k] || []);

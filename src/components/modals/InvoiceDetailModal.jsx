@@ -1,22 +1,29 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { runtime } from '../../data/runtime';
 import { CHANNEL_STAGES, CHANNEL_LABEL, CHANNEL_ROUTING_RULE, STATUS_CHIP } from '../../data/constants';
 import { stageProgress, handlerFor } from '../../utils/businessLogic';
 import { closeModal, openModal, pushToast } from '../../features/ui/uiSlice';
 import { selectPerm } from '../../features/auth/authSlice';
+import { selectScopedInvoices } from '../../features/invoices/selectors';
 import { moveInvoice, nextStatusFor } from '../../features/invoices/invoiceThunks';
 import ModalShell from './ModalShell.jsx';
 import Badge from '../common/Badge.jsx';
+
+function displayDate(value) {
+  if (!value) return null;
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 export default function InvoiceDetailModal({ ctx }) {
   const dispatch = useDispatch();
   useSelector((s) => s.ui.dataVersion); // re-render when this invoice is moved
   const perm = useSelector(selectPerm);
   const authType = useSelector((s) => s.auth.authType);
+  const invoices = useSelector(selectScopedInvoices);
   const [utrInput, setUtrInput] = useState('');
   const [moving, setMoving] = useState(false);
-  const inv = runtime.invoices.find((i) => i.no === ctx.no);
+  const inv = invoices.find((i) => i.no === ctx.no);
   if (!inv) return null;
 
   const next = authType === 'internal' && perm.editRows ? nextStatusFor(inv) : null;
@@ -34,11 +41,31 @@ export default function InvoiceDetailModal({ ctx }) {
       setMoving(false);
     }
   }
-  const stages = CHANNEL_STAGES[inv.channel];
-  const done = stageProgress(inv.channel, inv.status);
-  const failed = inv.status === 'Failed';
+  const stages = ['Invoice Uploaded', 'Pending Approval', 'Approved', 'Miro Booked', 'Payment Due', 'Paid'];
+  const currentIndex = stages.indexOf(inv.status);
+  const failed = inv.status === 'Rejected' || inv.status === 'Deleted';
+  const done = failed ? 1 : (currentIndex >= 0 ? currentIndex + 1 : 1);
   const h = handlerFor(inv);
-  const bookedOrLater = done >= Math.ceil(stages.length * 0.7) || inv.status === 'Paid' || inv.status === 'Short-Paid';
+  const bookedOrLater = done >= Math.ceil(stages.length * 0.7) || inv.status === 'Paid';
+
+  const getStageDate = (stage) => {
+    switch (stage) {
+      case 'Invoice Uploaded':
+        return displayDate(inv.rawDate);
+      case 'Pending Approval':
+        return null;
+      case 'Approved':
+        return displayDate(inv.workflow?.final_approval_date);
+      case 'Miro Booked':
+        return displayDate(inv.sap?.document_date || inv.sap?.posting_date);
+      case 'Payment Due':
+        return displayDate(inv.sap?.net_due_date);
+      case 'Paid':
+        return inv.utr && inv.utr !== '-' ? `${displayDate(inv.sap?.clearing_date)} (${inv.utr})` : displayDate(inv.sap?.clearing_date);
+      default:
+        return null;
+    }
+  };
 
   return (
     <ModalShell
@@ -47,7 +74,7 @@ export default function InvoiceDetailModal({ ctx }) {
       foot={(
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="btn" onClick={() => dispatch(openModal({ kind: 'notifyPreview', ctx: { no: inv.no } }))}>✉ Notify Supplier</button>
+            <button type="button" className="btn" onClick={() => dispatch(openModal({ kind: 'notifyPreview', ctx: { no: inv.no } }))}>Ã¢Å“â€° Notify Supplier</button>
           </div>
           <button type="button" className="btn" onClick={() => dispatch(closeModal())}>Close</button>
         </div>
@@ -64,13 +91,18 @@ export default function InvoiceDetailModal({ ctx }) {
       </div>
       <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '-10px 0 16px' }}>Why this channel: {CHANNEL_ROUTING_RULE[inv.channel]}</p>
 
-      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Currently Handled By</label>
-      <div className="row" style={{ margin: '8px 0 16px' }}>
-        <div className="form-field" style={{ flex: 1 }}><label>Approver</label><input value={`${h.approver} · ${h.approverEmail}`} readOnly /></div>
-        <div className="form-field" style={{ flex: 1 }}><label>Accounts</label><input value={bookedOrLater ? `${h.accounts} · ${h.accountsEmail}` : 'Not yet assigned'} readOnly /></div>
-      </div>
+      {authType !== 'supplier' && (
+        <>
+          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Currently Handled By</label>
+          <div className="row" style={{ margin: '8px 0 16px' }}>
+            <div className="form-field" style={{ flex: 1 }}><label>Approver</label><input value={`${h.approver} · ${h.approverEmail}`} readOnly /></div>
+            <div className="form-field" style={{ flex: 1 }}><label>Accounts</label><input value={bookedOrLater ? `${h.accounts} · ${h.accountsEmail}` : 'Not yet assigned'} readOnly /></div>
+          </div>
+        </>
+      )}
 
-      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Stage-by-Stage Status ({CHANNEL_LABEL[inv.channel]})</label>
+
+      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Invoice Progress</label>
       <div style={{ margin: '10px 0 18px' }}>
         {stages.map((s, i) => {
           const idx = i + 1;
@@ -78,17 +110,19 @@ export default function InvoiceDetailModal({ ctx }) {
           const dotBg = st === 'fail' ? 'var(--red)' : st === 'done' ? 'var(--green)' : st === 'current' ? 'var(--blue)' : '#E2E8F0';
           const dotFg = st === 'todo' ? 'var(--text-muted)' : '#fff';
           const txtColor = st === 'todo' ? 'var(--text-muted)' : 'var(--text)';
+          const dateStr = getStageDate(s);
           return (
             <div style={{ display: 'flex', gap: 10 }} key={i}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: dotBg, color: dotFg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                  {st === 'done' ? '✓' : st === 'fail' ? '✕' : idx}
+                  {st === 'done' ? 'Ã¢Å“â€œ' : st === 'fail' ? 'Ã¢Å“â€¢' : idx}
                 </div>
                 {i < stages.length - 1 && <div style={{ width: 2, flex: 1, minHeight: 14, background: idx < done ? 'var(--blue)' : '#E2E8F0' }} />}
               </div>
               <div style={{ paddingBottom: 14, paddingTop: 1 }}>
                 <div style={{ fontSize: 12.5, fontWeight: st === 'current' ? 700 : 500, color: txtColor }}>{s}</div>
                 {st === 'current' && <div style={{ fontSize: 11, color: 'var(--blue)', marginTop: 2 }}>In progress</div>}
+                {dateStr && <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>{dateStr}</div>}
               </div>
             </div>
           );
@@ -109,7 +143,7 @@ export default function InvoiceDetailModal({ ctx }) {
               />
             )}
             <button type="button" className="btn primary" disabled={moving} onClick={advance}>
-              {moving ? 'Saving…' : `Mark ${next}`}
+              {moving ? 'SavingÃ¢â‚¬Â¦' : `Mark ${next}`}
             </button>
           </span>
         </div>
@@ -121,3 +155,7 @@ export default function InvoiceDetailModal({ ctx }) {
     </ModalShell>
   );
 }
+
+
+
+

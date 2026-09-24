@@ -2,7 +2,7 @@ import { runtime } from '../data/runtime';
 import InvoiceTable from '../components/invoices/InvoiceTable.jsx';
 
 export default function OutputsPage() {
-  const completed = runtime.invoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid');
+  const completed = runtime.invoices.filter((i) => i.status === 'Paid');
   const bySupplier = {};
   completed.forEach((i) => { bySupplier[i.vendor] = (bySupplier[i.vendor] || 0) + 1; });
 
@@ -12,7 +12,6 @@ export default function OutputsPage() {
       <div className="row" style={{ marginBottom: 18 }}>
         <div className="stat-card"><div className="lbl">Completed Invoices</div><div className="val">{completed.length}</div></div>
         <div className="stat-card"><div className="lbl">Suppliers Covered</div><div className="val">{Object.keys(bySupplier).length}</div></div>
-        <div className="stat-card warn"><div className="lbl">Short-Paid Among Them</div><div className="val">{completed.filter((i) => i.status === 'Short-Paid').length}</div></div>
       </div>
       <div className="card">
         <h3>Completed Invoices : payment confirmed, UTR available</h3>

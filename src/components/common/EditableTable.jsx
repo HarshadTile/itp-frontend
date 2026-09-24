@@ -9,7 +9,7 @@ const PAGE_SIZE = 20;
 function renderCell(v) {
   if (v === '-') return <span style={{ color: '#CBD5E1' }}>-</span>;
   if (['Yes', 'Active', 'Success', 'Paid', 'Approved'].includes(v)) return <Badge tone="green">{v}</Badge>;
-  if (['No', 'Inactive', 'Failed', 'Rejected'].includes(v)) return <Badge tone="red">{v}</Badge>;
+  if (['No', 'Inactive', 'Failed', 'Rejected', 'Deleted'].includes(v)) return <Badge tone="red">{v}</Badge>;
   if (['Pending', 'Pending Approval'].includes(v)) return <Badge tone="amber">{v}</Badge>;
   return v;
 }

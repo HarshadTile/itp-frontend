@@ -49,12 +49,12 @@ export const INTERNAL_TEAM_CHANNELS = LOGIN_CHANNELS.map((c) => c.key);
 
 export const VIEW_COLUMNS = {
   'Invoice Log': ['Invoice No', 'Vendor Code', 'Vendor Name', 'PO No', 'Invoice Date', 'Amount', 'Status'],
-  'Approver Assignment': ['Invoice No', 'Assigned Approver', 'Assigned Date', 'Approval Status', 'Approved Date'],
+  'Approver Assignment': ['Invoice No', 'Assigned Date', 'Approval Status', 'Approved Date'],
   'SAP Booking (MIRO)': ['Invoice No', 'MIRO Doc No', 'Booked By', 'Booking Date', 'Payment Due Date'],
   'Payment & UTR (FBL1N)': ['Invoice No', 'Vendor Code', 'Payment Date', 'UTR No', 'Amount Paid', 'Short-Payment Reason'],
   'Service Entry (ML81N)': ['Invoice No', 'Service Entry No', 'Created By', 'Creation Date', 'PO No'],
   'Payment Status': ['Invoice No', 'Vendor Code', 'Payment Due Date', 'Payment Status', 'Payment Date', 'UTR No'],
-  'Email Approval Trail': ['Invoice No', 'Approver Email', 'Approval Email Date', 'Subject', 'Status'],
+  'Email Approval Trail': ['Invoice No', 'Approval Email Date', 'Subject', 'Status'],
   'Corp Finance Routing': ['Invoice No', 'Routed Date', 'Fund Arrangement Status', 'Corp Finance Approver'],
   'Service Entry & Payment': ['Invoice No', 'Service Entry No', 'Currency', 'Payment Due Date', 'Payment Status', 'UTR No'],
 };
@@ -72,7 +72,7 @@ export const VENDOR_CODE_MAP = {
 
 export const STATUS_CHIP = {
   Paid: 'green', 'Payment Due': 'blue', 'Pending Approval': 'amber', Approved: 'blue',
-  Booked: 'purple', Uploaded: 'gray', 'Short-Paid': 'amber', Failed: 'red',
+  'Miro Booked': 'purple', 'Invoice Uploaded': 'gray', Rejected: 'red', Deleted: 'red',
 };
 
 export const CHANNEL_STAGES = {
@@ -118,15 +118,12 @@ export const VIEW_MILESTONE = {
   mfoxPortal: { 'Approver Assignment': 3, 'Corp Finance Routing': 4, 'Service Entry & Payment': 6 },
 };
 
-export const APPROVER_POOL = ['R. Kulkarni', 'S. Iyer', 'A. Mehta', 'P. Deshmukh', 'N. Bhatt'];
-export const ACCOUNTS_POOL = ['V. Nair', 'K. Shah', 'J. Pillai', 'M. Rao'];
 
 export const TICKET_CATEGORIES = ['Payment Not Received', 'Short Payment', 'Invoice Not Visible', 'Debit Note Query', 'PO / Rate Mismatch'];
 export const TICKET_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 export const PRIORITY_CHIP = { Low: 'gray', Medium: 'blue', High: 'amber', Urgent: 'red' };
 export const TICKET_STATUS_CHIP = { Open: 'red', 'In Progress': 'amber', Resolved: 'green', Closed: 'gray' };
 export const TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed'];
-export const ASSIGNEE_ROSTER = ['MDE Invoice Team', ...APPROVER_POOL, ...ACCOUNTS_POOL];
 
 export const CHANNEL_SYNC_LABELS = {
   msetuSrm: ['Msetu / SRM', 'SAP: FBL1N'],
@@ -137,3 +134,5 @@ export const CHANNEL_SYNC_LABELS = {
 
 // A fixed "now" so ticket SLA breach and relative dates are deterministic across the app.
 export const APP_NOW = '2026-09-09';
+
+export const ASSIGNEE_ROSTER = ['MDE Invoice Team', 'Sourcing Ops Team', 'Accounts Team'];

@@ -54,8 +54,8 @@ export default function ChannelPage() {
 function ChannelHistory({ channelKey, channelInvoices }) {
   const [activeKpi, setActiveKpi] = useState('total');
   const rows = runtime.syncLog.filter((s) => CHANNEL_SYNC_LABELS[channelKey].includes(s.channel));
-  const done = channelInvoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid').length;
-  const failed = channelInvoices.filter((i) => i.status === 'Failed').length;
+  const done = channelInvoices.filter((i) => i.status === 'Paid').length;
+  const failed = channelInvoices.filter((i) => i.status === 'Rejected' || i.status === 'Deleted').length;
   const ongoing = channelInvoices.length - done - failed;
   const filters = {
     total: {
@@ -64,15 +64,15 @@ function ChannelHistory({ channelKey, channelInvoices }) {
     },
     completed: {
       label: 'Completed / Done',
-      invoices: channelInvoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid'),
+      invoices: channelInvoices.filter((i) => i.status === 'Paid'),
     },
     ongoing: {
       label: 'Currently In Progress',
-      invoices: channelInvoices.filter((i) => i.status !== 'Paid' && i.status !== 'Short-Paid' && i.status !== 'Failed'),
+      invoices: channelInvoices.filter((i) => i.status !== 'Paid' && i.status !== 'Rejected' && i.status !== 'Deleted'),
     },
     failed: {
       label: 'Failed',
-      invoices: channelInvoices.filter((i) => i.status === 'Failed'),
+      invoices: channelInvoices.filter((i) => i.status === 'Rejected' || i.status === 'Deleted'),
     },
   };
   const activeFilter = filters[activeKpi] || filters.total;

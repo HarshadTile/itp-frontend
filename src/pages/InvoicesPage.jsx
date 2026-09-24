@@ -20,8 +20,9 @@ const ClockIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="
 const CardIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>);
 const EyeOffIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A9.5 9.5 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.5 6.5A17 17 0 0 0 2 12s4 7 10 7a9.4 9.4 0 0 0 3.5-.7" /></svg>);
 const SplitIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M12 3v18M5 8l-3 4 3 4M19 8l3 4-3 4" /></svg>);
+const CheckCircleIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>);
 
-const STATUS_ORDER = ['Paid', 'Payment Due', 'Booked', 'Approved', 'Pending Approval', 'Uploaded', 'Short-Paid', 'Failed'];
+const STATUS_ORDER = ['Paid', 'Payment Due', 'Miro Booked', 'Approved', 'Pending Approval', 'Invoice Uploaded', 'Rejected', 'Deleted'];
 const RECENT_LIMIT = 5;
 
 /* Single-hue Mahindra-red ramp: dark = largest value, light = smallest. */
@@ -45,9 +46,9 @@ function aggregate(invoices, channelList) {
     total: invoices.length,
     kpi: {
       pendingApproval: count((i) => i.status === 'Pending Approval'),
+      approved: count((i) => i.status === 'Approved'),
       paymentDue: count((i) => i.status === 'Payment Due'),
-      noUtr: count((i) => (i.status === 'Paid' || i.status === 'Short-Paid') && i.utr === '-'),
-      shortPaid: count((i) => i.status === 'Short-Paid'),
+      paid: count((i) => i.status === 'Paid'),
     },
     byChannel: channelList.map((c) => ({ key: c.key, value: count((i) => i.channel === c.key) })),
     byStatus: STATUS_ORDER.map((s) => ({ key: s, value: count((i) => i.status === s) })).filter((s) => s.value > 0),
@@ -156,9 +157,9 @@ export default function InvoicesPage() {
         <div className="dash">
           <div className="kpi-grid">
             <StatCard tone="warn" icon={<ClockIcon />} label="Pending Approval" value={agg.kpi.pendingApproval} sub="Awaiting approver action" />
-            <StatCard icon={<CardIcon />} label="Payment Due" value={agg.kpi.paymentDue} sub="Booked, due this cycle" />
-            <StatCard tone="bad" icon={<EyeOffIcon />} label="No UTR Visibility" value={agg.kpi.noUtr} sub="Paid, UTR not yet synced" />
-            <StatCard tone="warn" icon={<SplitIcon />} label="Short-Paid" value={agg.kpi.shortPaid} sub="Paid below invoice value" />
+            <StatCard tone="brand" icon={<CheckCircleIcon />} label="Approved" value={agg.kpi.approved} sub="Approved by business" />
+            <StatCard tone="brand" icon={<CardIcon />} label="Payment Due" value={agg.kpi.paymentDue} sub="Booked, due this cycle" />
+            <StatCard tone="good" icon={<CheckCircleIcon />} label="Paid" value={agg.kpi.paid} sub="Payment cleared" />
           </div>
 
           <div className="chart-grid">

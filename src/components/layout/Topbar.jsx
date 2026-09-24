@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CHANNELS, CHANNEL_LABEL } from '../../data/constants';
 import { runtime, suppliersFromRuntime } from '../../data/runtime';
-import { vendorCodesFor } from '../../utils/businessLogic';
+import { vendorCodesFor, getFiscalYear } from '../../utils/businessLogic';
+import { selectScopedInvoices } from '../../features/invoices/selectors';
 import { switchIdentity } from '../../features/auth/authSlice';
 import { pushToast, resetFiltersOnIdentitySwitch, toggleSidebar } from '../../features/ui/uiSlice';
 import { Bell, HelpCircle, ChevronDown, Menu } from '../common/icons.jsx';
@@ -223,6 +224,72 @@ function TopbarChannelDropdown({ searchParams, onUpdate, channelScope }) {
 }
 
 /* ── Topbar ────────────────────────────────────────────────────────── */
+
+function TopbarFiscalYearDropdown({ searchParams, onUpdate }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const currentFY = searchParams.get('fy') || getFiscalYear(new Date().toISOString());
+  const isAll = currentFY === 'all';
+  const invoices = useSelector(selectScopedInvoices);
+  const fyOptions = useMemo(() => {
+    const today = new Date();
+    const currentY = today.getFullYear();
+    const isPastMarch = today.getMonth() >= 3;
+    const currentStartYear = isPastMarch ? currentY : currentY - 1;
+    
+    const years = new Set();
+    // Always include current and last 3 years
+    for (let i = 0; i < 4; i++) {
+      const y = currentStartYear - i;
+      years.add(`${y}-${String(y + 1).slice(2)}`);
+    }
+    
+    // Also include any years found in actual records
+    invoices.forEach((inv) => inv.date && years.add(getFiscalYear(inv.date)));
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [invoices]);
+  function pick(fy) { onUpdate('fy', fy); setOpen(false); }
+  useEffect(() => {
+    function handler(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          height: 38, maxWidth: 160, padding: '0 10px 0 12px',
+          background: !isAll ? '#EFF6FF' : '#F0F1F4',
+          border: `1px solid ${!isAll ? '#3B82F6' : 'var(--border)'}`,
+          borderRadius: 9, fontSize: 12.5, fontWeight: 500,
+          color: !isAll ? '#1D4ED8' : 'var(--text-body)',
+          cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden',
+        }}
+        aria-haspopup="listbox" aria-expanded={open} title="Filter by Fiscal Year"
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{isAll ? 'All Years' : `FY ${currentFY}`}</span>
+        {!isAll
+          ? <span onClick={(e) => { e.stopPropagation(); pick('all'); }} style={{ opacity: .7, fontSize: 15, lineHeight: 1, flexShrink: 0 }} aria-label="Clear filter">×</span>
+          : <ChevronDown size={13} style={{ flexShrink: 0, opacity: .6 }} />
+        }
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, width: 140, background: '#fff', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 12px 34px rgba(23,24,26,.13)', overflow: 'hidden' }}>
+          <div style={{ maxHeight: 260, overflowY: 'auto' }} role="listbox">
+            <button type="button" role="option" aria-selected={isAll} onClick={() => pick('all')} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', border: 'none', background: isAll ? 'var(--brand-tint)' : 'none', color: isAll ? 'var(--brand-dark)' : 'var(--text-body)', fontWeight: isAll ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>All Years</button>
+            {fyOptions.map((fy) => (
+              <button key={fy} type="button" role="option" aria-selected={currentFY === fy} onClick={() => pick(fy)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', border: 'none', fontSize: 13, background: currentFY === fy ? 'var(--brand-tint)' : 'none', color: currentFY === fy ? 'var(--brand-dark)' : 'var(--text-body)', fontWeight: currentFY === fy ? 700 : 500, cursor: 'pointer' }} onMouseEnter={(e) => { if (currentFY !== fy) e.currentTarget.style.background = 'var(--gray-bg)'; }} onMouseLeave={(e) => { if (currentFY !== fy) e.currentTarget.style.background = 'none'; }}>{fy}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Topbar() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -251,6 +318,9 @@ export default function Topbar() {
       <div className="crumb"><b>{crumb}</b></div>
 
       <div className="topbar-right">
+        {authType === 'supplier' && (
+          <TopbarFiscalYearDropdown searchParams={searchParams} onUpdate={updateSearchParam} />
+        )}
         {/* Channel + Vendor search dropdowns — shown for all internal users on all pages */}
         {authType === 'internal' && (
           <>

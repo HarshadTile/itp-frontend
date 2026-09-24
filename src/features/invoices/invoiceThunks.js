@@ -2,8 +2,8 @@ import { api } from '../../api/client';
 import { runtime } from '../../data/runtime';
 import { bumpData } from '../ui/uiSlice';
 
-/** The forward path an invoice takes; Failed / Short-Paid are outcomes, not steps. */
-export const STATUS_LADDER = ['Uploaded', 'Pending Approval', 'Approved', 'Booked', 'Payment Due', 'Paid'];
+/** The forward path an invoice takes; Failed is an outcome, not a step. */
+export const STATUS_LADDER = ['Invoice Uploaded', 'Pending Approval', 'Approved', 'Miro Booked', 'Payment Due', 'Paid'];
 
 export function nextStatusFor(inv) {
   const i = STATUS_LADDER.indexOf(inv.status);

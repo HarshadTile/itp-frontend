@@ -1,8 +1,21 @@
 import {
-  CHANNEL_STAGES, APPROVER_POOL, ACCOUNTS_POOL, VIEW_MILESTONE, APP_NOW,
+  CHANNEL_STAGES, VIEW_MILESTONE, APP_NOW,
 } from '../data/constants';
 import { runtime } from '../data/runtime';
 import { VENDOR_CODE_MAP } from '../data/constants';
+
+export function handlerFor(inv) {
+  return { approver: '-', approverEmail: '-', accounts: '-', accountsEmail: '-' };
+}
+
+export function currentHandlerFor(inv) {
+  return { name: '-', role: '-', email: '-' };
+}
+
+function bucketHandlerFor(inv, pct) {
+  return { name: '-', role: '-', email: '-' };
+}
+
 
 /* ===================== small deterministic helpers ===================== */
 export function hashIdx(str, mod) {
@@ -71,8 +84,8 @@ export function posForVendorCode(code) {
 export function stageProgress(channel, status) {
   const total = CHANNEL_STAGES[channel].length;
   const pct = {
-    Uploaded: 0.2, 'Pending Approval': 0.45, Approved: 0.6,
-    Booked: 0.8, 'Payment Due': 0.8, Paid: 1, 'Short-Paid': 1, Failed: 0.4,
+    'Invoice Uploaded': 0.2, 'Pending Approval': 0.45, Approved: 0.6,
+    'Miro Booked': 0.8, 'Payment Due': 0.8, Paid: 1, Rejected: 0.4, Deleted: 0.4,
   }[status] || 0.2;
   return Math.max(1, Math.round(total * pct));
 }
@@ -80,40 +93,16 @@ export function stageProgress(channel, status) {
 export function currentStageName(inv) {
   const stages = CHANNEL_STAGES[inv.channel];
   const done = stageProgress(inv.channel, inv.status);
-  if (inv.status === 'Failed') return 'Failed at: ' + stages[Math.max(0, done - 1)];
+  if (inv.status === 'Rejected' || inv.status === 'Deleted') return 'Failed at: ' + stages[Math.max(0, done - 1)];
   if (done >= stages.length) return stages[stages.length - 1];
   return stages[done - 1];
 }
 
-export function handlerFor(inv) {
-  const approver = APPROVER_POOL[hashIdx(inv.no, APPROVER_POOL.length)];
-  const accounts = ACCOUNTS_POOL[hashIdx(inv.no + 'x', ACCOUNTS_POOL.length)];
-  const mailify = (n) => n.toLowerCase().replace(/[.\s]+/g, '.') + '@company.com';
-  return { approver, approverEmail: mailify(approver), accounts, accountsEmail: mailify(accounts) };
-}
-
-export function currentHandlerFor(inv) {
-  const h = handlerFor(inv);
-  if (inv.status === 'Uploaded') return { role: 'MDE Invoice Team', name: 'MDE Invoice Team', email: 'mde.invoiceteam@company.com' };
-  if (inv.status === 'Pending Approval') return { role: 'Approver', name: h.approver, email: h.approverEmail };
-  if (['Approved', 'Booked', 'Payment Due'].includes(inv.status)) return { role: 'Accounts', name: h.accounts, email: h.accountsEmail };
-  if (['Paid', 'Short-Paid'].includes(inv.status)) return { role: 'MDE Invoice Team, for UTR queries', name: 'MDE Invoice Team', email: 'mde.invoiceteam@company.com' };
-  return { role: 'MDE Invoice Team', name: 'MDE Invoice Team', email: 'mde.invoiceteam@company.com' };
-}
-
-function bucketHandlerFor(inv, pct) {
-  const h = handlerFor(inv);
-  if (pct <= 0.2) return { role: 'MDE Invoice Team', name: 'MDE Invoice Team', email: 'mde.invoiceteam@company.com' };
-  if (pct <= 0.45) return { role: 'Approver', name: h.approver, email: h.approverEmail };
-  if (pct <= 0.8) return { role: 'Accounts', name: h.accounts, email: h.accountsEmail };
-  return { role: 'MDE Invoice Team, for UTR queries', name: 'MDE Invoice Team', email: 'mde.invoiceteam@company.com' };
-}
 
 export function combinedStatusFor(inv) {
   if (inv.status === 'Paid') return { label: 'Fully Paid', tone: 'green', reason: 'Settled in full. UTR and payment date are shown below.' };
-  if (inv.status === 'Short-Paid') return { label: 'Partially Paid', tone: 'amber', reason: inv.shortPayReason || 'Balance withheld. Reason not on file yet.' };
-  if (inv.status === 'Failed') return { label: 'Unpaid', tone: 'red', reason: 'Blocked. See the current stage above for why.' };
-  if (['Payment Due', 'Booked'].includes(inv.status)) return { label: 'Unpaid', tone: 'blue', reason: 'Booked, not yet due for payment.' };
+  if (inv.status === 'Rejected' || inv.status === 'Deleted') return { label: inv.status, tone: 'red', reason: 'Blocked. See the current stage above for why.' };
+  if (['Payment Due', 'Miro Booked'].includes(inv.status)) return { label: 'Unpaid', tone: 'blue', reason: 'Booked, not yet due for payment.' };
   return { label: 'In Approval', tone: 'amber', reason: 'Awaiting internal review or approver action.' };
 }
 
@@ -122,12 +111,13 @@ export function getInvoiceHistory(inv, tickets) {
   const stages = CHANNEL_STAGES[inv.channel];
   const total = stages.length;
   const done = stageProgress(inv.channel, inv.status);
-  const failed = inv.status === 'Failed';
+  const owner = currentHandlerFor(inv);
+  const failed = inv.status === 'Rejected' || inv.status === 'Deleted';
   const fullyDone = done >= total && !failed;
   const events = [];
   for (let i = 1; i <= done; i++) {
     const pct = i / total;
-    const owner = bucketHandlerFor(inv, pct);
+    
     const isCurrent = i === done;
     let evStatus = 'Completed';
     if (isCurrent && failed) evStatus = 'Failed';
@@ -146,7 +136,7 @@ export function getInvoiceHistory(inv, tickets) {
   (tickets || []).filter((t) => t.no === inv.no).forEach((t) => {
     events.push({ date: t.raisedDate, event: 'Query Raised', stage: `Category: ${t.category}`, status: t.status, person: t.raisedBy, role: t.raisedBy === 'Supplier' ? 'Supplier' : 'Internal', email: '', remarks: t.desc });
     if (t.resolvedDate) {
-      events.push({ date: t.resolvedDate, event: 'Query Resolved', stage: `Category: ${t.category}`, status: 'Resolved', person: currentHandlerFor(inv).name, role: currentHandlerFor(inv).role, email: '', remarks: '' });
+      events.push({ date: t.resolvedDate, event: 'Query Resolved', stage: `Category: ${t.category}`, status: 'Resolved', person: '-', role: '-', email: '', remarks: '' });
     }
   });
   return events.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -166,7 +156,7 @@ export function activityLogRows(invoices, limit = 8) {
   return sorted.slice(0, limit).map((inv) => ({
     inv,
     stage: currentStageName(inv),
-    owner: currentHandlerFor(inv),
+    
   }));
 }
 
@@ -175,14 +165,13 @@ export function channelViewRows(channelKey, view, invoices) {
   const milestone = (VIEW_MILESTONE[channelKey] || {})[view];
   return invoices.map((inv) => {
     const done = stageProgress(inv.channel, inv.status);
-    const failed = inv.status === 'Failed';
+    const failed = inv.status === 'Rejected' || inv.status === 'Deleted';
     const reached = milestone != null && done >= milestone && !failed;
     const idShort = inv.no.replace('INV-', '');
-    const approver = APPROVER_POOL[hashIdx(inv.no, APPROVER_POOL.length)];
-    if (view === 'Approver Assignment') return [inv.no, approver, inv.date, reached ? 'Approved' : (failed ? 'Rejected' : 'Pending'), reached ? inv.date : '-'];
+    if (view === 'Approver Assignment') return [inv.no, inv.date, reached ? 'Approved' : (failed ? 'Rejected' : 'Pending'), reached ? inv.date : '-'];
     if (view === 'SAP Booking (MIRO)') return [inv.no, reached ? 'MIRO-' + idShort : '-', reached ? 'Accounts Team' : '-', reached ? inv.date : '-', reached ? addDays(inv.date, 30) : '-'];
     if (view === 'Payment & UTR (FBL1N)') {
-      const paid = inv.status === 'Paid' || inv.status === 'Short-Paid';
+      const paid = inv.status === 'Paid';
       return [inv.no, inv.vcode, paid ? inv.date : '-', inv.utr, paid ? inv.amount : '-', inv.shortPayReason || '-'];
     }
     if (view === 'Service Entry (ML81N)') return [inv.no, reached ? 'SE-' + idShort : '-', reached ? 'MDE Invoice Team' : '-', reached ? inv.date : '-', inv.po];
@@ -190,7 +179,7 @@ export function channelViewRows(channelKey, view, invoices) {
       const paid = inv.status === 'Paid';
       return [inv.no, inv.vcode, addDays(inv.date, 30), failed ? 'Failed' : (paid ? 'Paid' : 'Pending'), paid ? inv.date : '-', paid ? inv.utr : '-'];
     }
-    if (view === 'Email Approval Trail') return [inv.no, approver.toLowerCase().replace(/[.\s]+/g, '.') + '@company.com', reached ? inv.date : '-', 'Approval - PO ' + inv.po, reached ? 'Approved' : (failed ? 'Rejected' : 'Pending')];
+    if (view === 'Email Approval Trail') return [inv.no, reached ? inv.date : '-', 'Approval - PO ' + inv.po, reached ? 'Approved' : (failed ? 'Rejected' : 'Pending')];
     if (view === 'Corp Finance Routing') return [inv.no, reached ? inv.date : '-', reached ? 'Arranged' : (failed ? 'Blocked' : 'Pending'), reached ? 'Corp Finance Desk' : '-'];
     if (view === 'Service Entry & Payment') {
       const paid = inv.status === 'Paid';
@@ -223,4 +212,14 @@ export function downloadCSV(filename, cols, rows) {
   a.download = filename.replace(/\s+/g, '_') + '.csv';
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+
+
+export function getFiscalYear(dateStr) {
+  const d = new Date(dateStr);
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  if (month < 3) return `${year - 1}-${String(year).slice(2)}`;
+  return `${year}-${String(year + 1).slice(2)}`;
 }

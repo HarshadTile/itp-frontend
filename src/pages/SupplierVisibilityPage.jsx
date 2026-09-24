@@ -21,7 +21,7 @@ export default function SupplierVisibilityPage() {
   const openIssues = ticketItems.filter((t) => ticketInvoice(t)?.vendor === supplier).filter((t) => t.status === 'Open' || t.status === 'In Progress').length;
   const paid = invoices.filter((i) => i.status === 'Paid').length;
   const due = invoices.filter((i) => i.status === 'Payment Due').length;
-  const inProgress = invoices.filter((i) => !['Paid', 'Short-Paid', 'Failed'].includes(i.status));
+  const inProgress = invoices.filter((i) => !['Paid', 'Rejected', 'Deleted'].includes(i.status));
   const withOpenIssues = invoices.filter((i) => ticketItems.some((t) => {
     const inv = ticketInvoice(t);
     return inv?.no === i.no && (t.status === 'Open' || t.status === 'In Progress');

@@ -8,7 +8,7 @@ function displayDate(value) {
 }
 
 function displayAmount(invoice) {
-  const amount = invoice.sap?.amount_local_currency ?? invoice.sap?.amount;
+  const amount = invoice.sap?.cash_discount_base ?? invoice.sap?.amount_local_currency ?? invoice.sap?.amount;
   if (amount === null || amount === undefined) return '-';
   const currency = invoice.sap?.currency || 'INR';
   try {
@@ -18,17 +18,27 @@ function displayAmount(invoice) {
   }
 }
 
-function normalizeStatus(invoice) {
-  const status = invoice.overall_status || invoice.status_flag;
-  return {
-    'Invoice Uploaded': 'Uploaded',
-    'Miro Booked': 'Booked',
-    Rejected: 'Failed',
-    Deleted: 'Failed',
-  }[status] || status || 'Uploaded';
+function getDynamicDate(invoice, status) {
+  switch (status) {
+    case 'Invoice Uploaded':
+      return invoice.sap?.posting_date 
+        ? `${displayDate(invoice.sap.posting_date)} / ${displayDate(invoice.invoice_date)}` 
+        : displayDate(invoice.invoice_date);
+    case 'Approved':
+      return displayDate(invoice.workflow?.final_approval_date || invoice.invoice_date);
+    case 'Miro Booked':
+      return displayDate(invoice.sap?.document_date || invoice.sap?.posting_date || invoice.invoice_date);
+    case 'Payment Due':
+      return displayDate(invoice.sap?.net_due_date || invoice.invoice_date);
+    case 'Paid':
+      return displayDate(invoice.sap?.clearing_date || invoice.invoice_date);
+    default:
+      return displayDate(invoice.invoice_date);
+  }
 }
 
 export function toWorkspaceInvoice(invoice) {
+  const status = invoice.overall_status || 'Invoice Uploaded';
   return {
     no: invoice.invoice_number,
     vcode: invoice.supplier?.vendor_code || '-',
@@ -38,11 +48,15 @@ export function toWorkspaceInvoice(invoice) {
     po: invoice.purchase_order?.po_number || '-',
     poItem: invoice.purchase_order?.po_item ?? '',
     amount: displayAmount(invoice),
-    status: normalizeStatus(invoice),
+    status,
     utr: invoice.sap?.utr_number || '-',
-    date: displayDate(invoice.invoice_date),
+    date: getDynamicDate(invoice, status),
     shortPayReason: invoice.workflow?.rejection_reason || undefined,
     stageIndex: invoice.workflow?.current_workflow_level || undefined,
+    // Keep raw objects for timeline rendering
+    sap: invoice.sap,
+    workflow: invoice.workflow,
+    rawDate: invoice.invoice_date,
   };
 }
 

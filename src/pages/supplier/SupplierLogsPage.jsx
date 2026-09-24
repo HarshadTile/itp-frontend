@@ -1,5 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { runtime } from '../../data/runtime';
+import { selectScopedInvoices } from '../../features/invoices/selectors';
+import { getFiscalYear } from '../../utils/businessLogic';
+import { useSearchParams } from 'react-router-dom';
 import { CHANNEL_LABEL } from '../../data/constants';
 import { activityLogRows } from '../../utils/businessLogic';
 import { openModal } from '../../features/ui/uiSlice';
@@ -7,8 +9,11 @@ import { openModal } from '../../features/ui/uiSlice';
 export default function SupplierLogsPage() {
   const dispatch = useDispatch();
   const code = useSelector((s) => s.auth.supplierLoginVcode);
-  const invoices = runtime.invoices.filter((i) => i.vcode === code);
-  const done = invoices.filter((i) => i.status === 'Paid' || i.status === 'Short-Paid');
+  const [searchParams] = useSearchParams();
+  const fySearch = searchParams.get('fy') || getFiscalYear(new Date().toISOString());
+  const scopedInvoices = useSelector(selectScopedInvoices);
+  const invoices = scopedInvoices.filter((i) => i.vcode === code && (fySearch === 'all' || getFiscalYear(i.date) === fySearch));
+  const done = invoices.filter((i) => i.status === 'Paid');
   const activityRows = activityLogRows(invoices);
 
   return (
@@ -21,18 +26,17 @@ export default function SupplierLogsPage() {
         <div className="table-scroll">
           <table>
             <thead>
-              <tr><th>Date</th><th>Invoice No</th><th>PO No</th><th>Stage</th><th>Owner</th></tr>
+              <tr><th>Date</th><th>Invoice No</th><th>PO No</th><th>Stage</th></tr>
             </thead>
             <tbody>
-              {activityRows.length ? activityRows.map(({ inv, stage, owner }) => (
+              {activityRows.length ? activityRows.map(({ inv, stage }) => (
                 <tr key={`${inv.no}-${stage}`}>
                   <td>{inv.date}</td>
                   <td><button type="button" className="link-hero" onClick={() => dispatch(openModal({ kind: 'supplierInvoiceDetail', ctx: { no: inv.no } }))}>{inv.no}</button></td>
                   <td>{inv.po}</td>
                   <td>{stage}</td>
-                  <td>{owner.name}<br /><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{owner.email}</span></td>
                 </tr>
-              )) : <tr><td colSpan={5} style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No activity yet on {code}.</td></tr>}
+              )) : <tr><td colSpan={4} style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No activity yet on {code}.</td></tr>}
             </tbody>
           </table>
         </div>
