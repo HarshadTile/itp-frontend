@@ -37,8 +37,8 @@ export default function RecentInvoices({ rows = [] }) {
                 <div className="empty-state"><Inbox /><b>No invoices yet</b><span>New invoices will appear here.</span></div>
               </td></tr>
             )}
-            {rows.map((inv) => (
-              <tr key={inv.no}>
+            {rows.map((inv, rowIndex) => (
+              <tr key={`${inv.no}-${rowIndex}`}>
                 <td><button type="button" className="link-hero" title="Open current stage" onClick={() => openStage(inv.no)}>{inv.no}</button></td>
                 <td><button type="button" className="vcode-chip link-hero" title={`Preview ${inv.vcode}`} onClick={() => openVendorCode(inv.vcode)}>{inv.vcode}</button></td>
                 <td className="cell-muted">{CHANNEL_LABEL[inv.channel]}</td>

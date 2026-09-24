@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { runtime } from '../../data/runtime';
 import { CHANNEL_STAGES, CHANNEL_LABEL } from '../../data/constants';
-import { combinedStatusFor, currentHandlerFor, stageProgress, panFor } from '../../utils/businessLogic';
+import { combinedStatusFor, currentHandlerFor, stageProgress } from '../../utils/businessLogic';
 import { setSupplierHomeTab, openModal } from '../../features/ui/uiSlice';
 import InvoiceTable from '../../components/invoices/InvoiceTable.jsx';
 import StatCard from '../../components/common/StatCard.jsx';
@@ -12,12 +13,22 @@ export default function SupplierHomePage() {
   const { supplierLoginVcode: code, supplierQuery: supplier, supplierPAN } = useSelector((s) => s.auth);
   const activeTab = useSelector((s) => s.ui.supplierHomeTab) || 'current';
   const [activeKpi, setActiveKpi] = useState('total');
+  const [searchParams] = useSearchParams();
+  const invoiceSearch = searchParams.get('invoice_number') || '';
+  const poSearch = searchParams.get('po_number') || '';
+  const poItemSearch = searchParams.get('po_item') || '';
 
-  const codeInvoices = runtime.invoices.filter((i) => i.vcode === code);
+  const codeInvoices = runtime.invoices.filter((i) => {
+    if (i.vcode !== code) return false;
+    const invoiceMatches = !invoiceSearch.trim() || i.no.toLowerCase().includes(invoiceSearch.trim().toLowerCase());
+    const poMatches = !poSearch.trim() || i.po.toLowerCase().includes(poSearch.trim().toLowerCase());
+    const itemMatches = !poItemSearch.trim() || String(i.poItem) === poItemSearch.trim();
+    return invoiceMatches && poMatches && itemMatches;
+  });
   const inProgress = codeInvoices.filter((i) => !['Paid', 'Short-Paid', 'Failed'].includes(i.status));
   const byLabel = {};
   codeInvoices.forEach((inv) => { const l = combinedStatusFor(inv).label; byLabel[l] = (byLabel[l] || 0) + 1; });
-  const pan = supplierPAN || panFor(supplier);
+  const pan = runtime.invoices.find((invoice) => invoice.vcode === code)?.pan || supplierPAN || '-';
   const kpiFilters = {
     total: codeInvoices,
     paid: codeInvoices.filter((i) => combinedStatusFor(i).label === 'Fully Paid'),
@@ -51,7 +62,7 @@ export default function SupplierHomePage() {
       </div>
 
       {activeTab === 'current' ? (
-        displayedCurrentInvoices.length ? displayedCurrentInvoices.map((inv) => <CurrentInvoiceCard key={inv.no} inv={inv} />) : (
+        displayedCurrentInvoices.length ? displayedCurrentInvoices.map((inv, rowIndex) => <CurrentInvoiceCard key={`${inv.no}-${rowIndex}`} inv={inv} />) : (
           <div className="card"><p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>Nothing currently in progress on {code} right now. Everything is either fully closed out or has not started yet. Check the All Invoices tab.</p></div>
         )
       ) : (

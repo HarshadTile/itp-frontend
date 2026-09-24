@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { CHANNELS, CHANNEL_LABEL } from '../data/constants';
+import { useSearchParams } from 'react-router-dom';
+import { CHANNELS, LOGIN_CHANNELS, CHANNEL_LABEL } from '../data/constants';
 import { selectScopedInvoices, selectInternalScopeLabel } from '../features/invoices/selectors';
+import { selectIsChannelLocked } from '../features/auth/authSlice';
 import { setInvoicesTopTab } from '../features/ui/uiSlice';
 import { api } from '../api/client';
 import GlobalLogsBody from '../components/common/GlobalLogsBody.jsx';
@@ -9,6 +11,9 @@ import StatCard from '../components/common/StatCard.jsx';
 import BarChart from '../components/common/BarChart.jsx';
 import DonutChart from '../components/common/DonutChart.jsx';
 import RecentInvoices from '../components/invoices/RecentInvoices.jsx';
+
+const USE_FASTAPI_INVOICES = import.meta.env.MODE !== 'test'
+  && import.meta.env.VITE_USE_FASTAPI_INVOICES === 'true';
 
 /* KPI glyphs — same stroke family as the rest of the app */
 const ClockIcon = (p) => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);
@@ -32,8 +37,9 @@ function shadeByRank(items) {
 }
 
 /* Aggregate the (already-loaded) invoice list into the same small shape the
-   /dashboard/summary endpoint returns — used as an offline fallback. */
-function aggregate(invoices) {
+   /dashboard/summary endpoint returns — used as an offline fallback.
+   channelList: only count these channels (tier-scoped). */
+function aggregate(invoices, channelList) {
   const count = (fn) => invoices.filter(fn).length;
   return {
     total: invoices.length,
@@ -43,7 +49,7 @@ function aggregate(invoices) {
       noUtr: count((i) => (i.status === 'Paid' || i.status === 'Short-Paid') && i.utr === '-'),
       shortPaid: count((i) => i.status === 'Short-Paid'),
     },
-    byChannel: CHANNELS.map((c) => ({ key: c.key, value: count((i) => i.channel === c.key) })),
+    byChannel: channelList.map((c) => ({ key: c.key, value: count((i) => i.channel === c.key) })),
     byStatus: STATUS_ORDER.map((s) => ({ key: s, value: count((i) => i.status === s) })).filter((s) => s.value > 0),
   };
 }
@@ -58,38 +64,66 @@ export default function InvoicesPage() {
   const dispatch = useDispatch();
   const invoices = useSelector(selectScopedInvoices);
   const scopeLabel = useSelector(selectInternalScopeLabel);
-  const isScoped = useSelector((s) => s.auth.channelScope === 'internalTeam');
+  const isChannelLocked = useSelector(selectIsChannelLocked);
+  const { channelScope } = useSelector((s) => s.auth);
   const topTab = useSelector((s) => s.ui.invoicesTopTab);
+  const [searchParams] = useSearchParams();
+
+  const topbarChannel = searchParams.get('channel');
+  const topbarVcode = searchParams.get('vcode');
+
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((i) => {
+      if (topbarChannel && i.channel !== topbarChannel) return false;
+      if (topbarVcode && i.vcode !== topbarVcode) return false;
+      return true;
+    });
+  }, [invoices, topbarChannel, topbarVcode]);
 
   // Server-side aggregation; falls back to the loaded list if the call fails.
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState(null);
 
   const dataVersion = useSelector((s) => s.ui.dataVersion);
-  const fetchKey = `${isScoped ? 'team' : 'all'}:${dataVersion}`;
+  const fetchKey = `${channelScope}:${dataVersion}`;
 
   useEffect(() => {
     let alive = true;
-    // An HQ admin viewing "as Internal Team" has an unscoped session, so the
-    // scope is sent explicitly; a real Internal Team session is scoped server-side.
-    const scope = isScoped ? 'scope=internalTeam' : '';
+    const scope = channelScope !== 'all' ? `scope=${channelScope}` : '';
+    
     (async () => {
       try {
-        const s = await api.get(`/dashboard/summary${scope ? `?${scope}` : ''}`);
-        if (alive && s && s.kpi) setSummary({ key: fetchKey, data: s });
+        if (USE_FASTAPI_INVOICES) {
+          const s = await import('../api/invoiceApi').then(m => m.invoiceApi.summary());
+          if (alive && s) setSummary({ key: fetchKey, data: s });
+        } else {
+          const s = await api.get(`/dashboard/summary${scope ? `?${scope}` : ''}`);
+          if (alive && s && s.kpi) setSummary({ key: fetchKey, data: s });
+        }
       } catch { /* fall back */ }
+      
       try {
-        const r = await api.get(`/dashboard/latest-invoices?count=${RECENT_LIMIT}${scope ? `&${scope}` : ''}`);
-        if (alive && Array.isArray(r)) setRecent({ key: fetchKey, data: r });
+        if (USE_FASTAPI_INVOICES) {
+          const toWorkspaceInvoice = await import('../api/invoiceApi').then(m => m.toWorkspaceInvoice);
+          const r = await import('../api/invoiceApi').then(m => m.invoiceApi.recent({ limit: RECENT_LIMIT }));
+          if (alive && Array.isArray(r)) setRecent({ key: fetchKey, data: r.map(toWorkspaceInvoice) });
+        } else {
+          const r = await api.get(`/dashboard/latest-invoices?count=${RECENT_LIMIT}${scope ? `&${scope}` : ''}`);
+          if (alive && Array.isArray(r)) setRecent({ key: fetchKey, data: r });
+        }
       } catch { /* fall back */ }
     })();
     return () => { alive = false; };
-  }, [fetchKey, isScoped]);
+  }, [fetchKey, channelScope]);
 
-  // Server numbers are only used while they belong to the current scope/data
-  // version; otherwise the (already scoped) loaded list is the fallback.
-  const agg = summary?.key === fetchKey ? summary.data : aggregate(invoices);
-  const recentRows = recent?.key === fetchKey ? recent.data : recentFrom(invoices);
+  // If local topbar filters are active, bypass the server summary and compute locally.
+  const isFiltering = topbarChannel || topbarVcode;
+  const useServerSummary = !isFiltering && summary?.key === fetchKey;
+  
+  const scopedChannels = isChannelLocked ? CHANNELS.filter((c) => c.key === channelScope) : CHANNELS;
+  
+  const agg = useServerSummary ? summary.data : aggregate(filteredInvoices, scopedChannels);
+  const recentRows = (!isFiltering && recent?.key === fetchKey) ? recent.data : recentFrom(filteredInvoices);
 
   const channelSegments = shadeByRank(
     agg.byChannel
@@ -103,7 +137,7 @@ export default function InvoicesPage() {
   return (
     <>
       <header className="page-head page-head--tight">
-        <h1 className="page-title">{isScoped ? `${scopeLabel} Invoice Tracking` : 'Invoice Tracking'}</h1>
+        <h1 className="page-title">{isChannelLocked ? `${scopeLabel} Invoice Tracking` : 'Invoice Tracking'}</h1>
       </header>
 
       <div className="seg-tabs" role="tablist" aria-label="Invoice view">

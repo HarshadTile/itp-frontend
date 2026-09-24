@@ -1,9 +1,4 @@
-import { panFor, vendorCodesFor } from './identity.js';
-
-const DEFAULT_USER = {
-  name: 'Ravi Kulkarni', initials: 'RK', title: 'MDE Invoice Lead',
-  dept: 'Procurement', email: 'r.kulkarni@company.com',
-};
+import { panFor } from './identity.js';
 
 function initialsOf(name) {
   const words = name.split(/[\s._-]+/).filter(Boolean);
@@ -32,18 +27,26 @@ export function buildAuthPayload(session, userRow = null) {
   if (session.authType === 'supplier') {
     const s = session.supplier || {};
     const company = s.company;
+    const name = company || 'Supplier';
     return {
       authType: 'supplier',
       channelScope: 'all',
       role: 'Viewer',
       supplierQuery: company,
       supplierPAN: s.pan ?? panFor(company),
-      supplierLoginVcode: s.vcode || vendorCodesFor(company)[0],
-      currentUser: DEFAULT_USER,
+      supplierLoginVcode: s.vcode,
+      currentUser: {
+        name,
+        initials: initialsOf(name),
+        title: 'Supplier',
+        dept: 'Supplier',
+        email: '',
+      },
     };
   }
   const scope = session.scope || {};
-  const channelScope = scope.channelScope === 'internalTeam' ? 'internalTeam' : 'all';
+  const validScopes = ['all', 'msetuSrm', 'poPortal', 'mfoxPortal'];
+  const channelScope = validScopes.includes(scope.channelScope) ? scope.channelScope : 'all';
   return {
     authType: 'internal',
     channelScope,
@@ -51,7 +54,7 @@ export function buildAuthPayload(session, userRow = null) {
     supplierQuery: null,
     supplierPAN: null,
     supplierLoginVcode: null,
-    currentUser: userRow ? internalUser(userRow, scope) : DEFAULT_USER,
+    currentUser: userRow ? internalUser(userRow, scope) : null,
   };
 }
 

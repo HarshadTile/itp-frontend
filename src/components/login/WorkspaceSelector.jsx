@@ -1,10 +1,12 @@
 import { BuildingIcon, CaretIcon } from './icons.jsx';
 
-/* The two supported scopes. Values and behaviour are unchanged from the
-   original implementation; only the option copy is tidied. */
+/* Per-channel login options. "Internal Team" bundle is removed —
+   each channel is now its own login. Manual has no own login. */
 const OPTIONS = [
-  { value: 'all', label: 'All Channels — HQ / Admin' },
-  { value: 'internalTeam', label: 'Internal Team — Msetu/SRM · PO Portal · MFOX' },
+  { value: 'all',        label: 'All Channels — HQ / Admin' },
+  { value: 'msetuSrm',  label: 'Msetu / SRM' },
+  { value: 'poPortal',  label: 'PO Portal' },
+  { value: 'mfoxPortal', label: 'MFOX Portal' },
 ];
 
 /** Portal / Team picker (native select for reliability + a11y). Controlled. */

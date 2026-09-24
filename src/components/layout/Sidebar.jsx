@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CHANNELS, LOGIN_CHANNELS } from '../../data/constants';
+import { CHANNELS, CHANNEL_LABEL } from '../../data/constants';
 import { toggleNavExpanded } from '../../features/ui/uiSlice';
 import { askLogout } from '../../features/auth/logoutPrompt';
 import { selectPerm } from '../../features/auth/authSlice';
@@ -16,7 +16,6 @@ function NavItem({ icon, label, active, badge, onClick, hasChildren, open }) {
       type="button"
       className={`nav-item${active ? ' active' : ''}`}
       onClick={onClick}
-      title={label}
       aria-current={active ? 'page' : undefined}
     >
       <span className="ic" aria-hidden="true">{icon}</span>
@@ -37,6 +36,7 @@ export default function Sidebar() {
   const isOpen = (id) => expandedNav.includes(id);
   const logout = () => dispatch(askLogout());
 
+  // ── Supplier sidebar ──
   if (authType === 'supplier') {
     const code = supplierLoginVcode;
     return (
@@ -58,8 +58,16 @@ export default function Sidebar() {
     );
   }
 
-  const scoped = channelScope === 'internalTeam';
-  const channelsToShow = scoped ? LOGIN_CHANNELS : CHANNELS;
+  // ── Internal sidebar ──
+  const isHQ = channelScope === 'all';
+  const isChannelLocked = !isHQ; // msetuSrm | poPortal | mfoxPortal
+
+  // Channel-locked: show only that one channel. HQ: show all 4.
+  const channelsToShow = isChannelLocked
+    ? CHANNELS.filter((c) => c.key === channelScope)
+    : CHANNELS;
+
+  const channelLabel = CHANNEL_LABEL[channelScope] || channelScope;
   const canUseSettings = perm.manageConfig || perm.manageUsers;
 
   return (
@@ -70,7 +78,7 @@ export default function Sidebar() {
           <p className="nav-section">Overview</p>
           <NavItem
             icon={<FileText />}
-            label={scoped ? 'Internal Team Invoice Tracking' : 'Invoice Tracking'}
+            label={isChannelLocked ? `${channelLabel} Invoice Tracking` : 'Invoice Tracking'}
             active={isActive('/app/invoices')}
             onClick={() => navigate('/app/invoices')}
           />
@@ -78,7 +86,7 @@ export default function Sidebar() {
 
           <NavItem
             icon={<Layers />}
-            label={scoped ? 'Internal Team : Processing' : 'Processing Channels'}
+            label={isChannelLocked ? `${channelLabel} : Processing` : 'Processing Channels'}
             hasChildren
             open={isOpen('channels')}
             onClick={() => dispatch(toggleNavExpanded('channels'))}
@@ -91,14 +99,15 @@ export default function Sidebar() {
             </div>
           )}
 
-          {!scoped && (
+          {/* Supplier Visibility and Reports — HQ only */}
+          {isHQ && (
             <NavItem icon={<Building />} label="Supplier Visibility" active={isActive('/app/supplier-visibility')} onClick={() => navigate('/app/supplier-visibility')} />
           )}
           <NavItem icon={<MessageSquare />} label="Inquiry Desk" active={isActive('/app/inquiry-desk')} onClick={() => navigate('/app/inquiry-desk')} />
         </nav>
 
         <div className="nav-bottom">
-          {!scoped && (
+          {isHQ && (
             <>
               <p className="nav-section">Reports &amp; admin</p>
               <NavItem icon={<BarChart3 />} label="Vendor Status Reports" active={isActive('/app/outputs')} onClick={() => navigate('/app/outputs')} />

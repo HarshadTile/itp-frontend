@@ -47,9 +47,9 @@ r.get('/workspace', requireAuth, async (req, res, next) => {
     const integrations = (await query('SELECT name,status,last_sync FROM integrations ORDER BY id'))
       .map((i) => [i.name, i.status, i.last_sync]);
     const settings = {
-      roleMatrix: parseJson(s.role_matrix_json),
-      twoFactorOn: !!s.two_factor,
-      senderEmail: s.sender_email,
+      roleMatrix: s ? parseJson(s.role_matrix_json) : { Viewer: { importExport: false, editRows: false, createTrace: true, manageUsers: false, manageConfig: false } },
+      twoFactorOn: s ? !!s.two_factor : false,
+      senderEmail: s?.sender_email || '',
       integrations,
     };
 

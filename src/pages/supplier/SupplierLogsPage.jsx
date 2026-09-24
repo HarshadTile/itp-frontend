@@ -44,8 +44,8 @@ export default function SupplierLogsPage() {
           <table>
             <thead><tr><th>Invoice No</th><th>Portal</th><th>PO No</th><th>Amount</th><th>Status</th><th>UTR No</th><th>Date</th></tr></thead>
             <tbody>
-              {done.length ? done.map((inv) => (
-                <tr key={inv.no}>
+              {done.length ? done.map((inv, rowIndex) => (
+                <tr key={`${inv.no}-${rowIndex}`}>
                   <td><button type="button" className="link-hero" onClick={() => dispatch(openModal({ kind: 'supplierInvoiceDetail', ctx: { no: inv.no } }))}>{inv.no}</button></td>
                   <td>{CHANNEL_LABEL[inv.channel]}</td><td>{inv.po}</td><td>{inv.amount}</td>
                   <td><span className={`chip ${inv.status === 'Paid' ? 'green' : 'amber'}`}>{inv.status}</span></td>

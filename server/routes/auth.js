@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { query } from '../db.js';
 import { verifyPassword, createSession, deleteSession, requireAuth, getSession } from '../auth.js';
 import { buildAuthPayload } from '../serializers.js';
-import { panFor, supplierForCode } from '../identity.js';
+import { supplierForCode } from '../identity.js';
 
 const r = Router();
 
@@ -17,7 +17,7 @@ r.post('/login', async (req, res, next) => {
       if (!vcode) return res.status(400).json({ error: 'vendor code is required' });
       const company = await supplierForCode(vcode);
       if (!company) return res.status(401).json({ error: 'Invalid vendor code.' });
-      const supplier = { company: company.vendor, pan: panFor(company.vendor), vcode: company.vcode };
+      const supplier = { company: company.vendor, pan: company.pan, vcode: company.vcode };
       const token = await createSession({ authType: 'supplier', supplier });
       const session = await getSession(token);
       return res.json({ token, auth: buildAuthPayload(session) });
@@ -35,13 +35,18 @@ r.post('/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
     // Only Admin accounts may sign in with the all-channels (HQ) scope.
-    const wantsAll = channelScope !== 'internalTeam';
+    const wantsAll = channelScope === 'all';
     if (wantsAll && user.role !== 'Admin') {
-      return res.status(403).json({ error: 'This account can only sign in to the Internal Team portal.' });
+      return res.status(403).json({ error: 'This account can only sign in to a specific channel portal.' });
     }
+    
+    // Validate the requested channel scope
+    const validScopes = ['all', 'msetuSrm', 'poPortal', 'mfoxPortal'];
+    const finalScope = validScopes.includes(channelScope) ? channelScope : 'all';
+    
     // remember how they signed in: that decides which name the app displays
     const loginBy = user.username.toLowerCase() === loginId ? 'username' : 'email';
-    const scope = { channelScope: wantsAll ? 'all' : 'internalTeam', loginBy, loginId };
+    const scope = { channelScope: finalScope, loginBy, loginId };
     const token = await createSession({ userId: user.id, authType: 'internal', scope });
     const session = await getSession(token);
     return res.json({ token, auth: buildAuthPayload(session, user) });

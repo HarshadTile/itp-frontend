@@ -1,16 +1,23 @@
-import { INTERNAL_TEAM_CHANNELS } from '../src/data/constants.js';
+import { CHANNELS } from '../src/data/constants.js';
 
 /** WHERE fragment limiting invoices to what this caller may see.
  *  - supplier sessions: only their own vendor code
- *  - Internal Team scope (from the session, or ?scope=internalTeam when an HQ
- *    admin is viewing as the team): only the team's channels */
+ *  - Channel scope (from the session, or ?scope=msetuSrm when an HQ
+ *    admin is viewing as a specific channel): only that channel */
 export function invoiceVisibility(req) {
   if (req.session.authType === 'supplier') {
     return { sql: ' WHERE vcode=?', params: [req.session.supplier?.vcode ?? ''] };
   }
-  const scoped = req.session.scope?.channelScope === 'internalTeam' || req.query.scope === 'internalTeam';
-  if (scoped) {
-    return { sql: ` WHERE channel IN (${INTERNAL_TEAM_CHANNELS.map(() => '?').join(',')})`, params: [...INTERNAL_TEAM_CHANNELS] };
+  
+  const validScopes = ['msetuSrm', 'poPortal', 'mfoxPortal'];
+  const sessionScope = req.session.scope?.channelScope;
+  const queryScope = req.query.scope;
+  
+  const targetScope = validScopes.includes(sessionScope) ? sessionScope : 
+                      (validScopes.includes(queryScope) ? queryScope : 'all');
+
+  if (targetScope !== 'all') {
+    return { sql: ' WHERE channel=?', params: [targetScope] };
   }
   return { sql: '', params: [] };
 }

@@ -45,7 +45,7 @@ export async function deleteSession(token) {
 /** The role a session acts as. Mirrors buildAuthPayload in serializers.js. */
 export function roleFor(session) {
   if (session.authType === 'supplier') return 'Viewer';
-  return session.scope?.channelScope === 'internalTeam' ? 'MDE Invoice Team' : 'Admin';
+  return session.scope?.channelScope !== 'all' ? 'MDE Invoice Team' : 'Admin';
 }
 
 export async function requireAuth(req, res, next) {

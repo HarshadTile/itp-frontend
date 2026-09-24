@@ -5,11 +5,24 @@ import { hydrateTables } from '../tables/tablesSlice';
 import { hydrateSettings } from '../settings/settingsSlice';
 import { setRuntimeData } from '../../data/runtime';
 import { bumpData } from '../ui/uiSlice';
+import { invoiceApi } from '../../api/invoiceApi';
+import { AUTH_BYPASS } from '../auth/authSlice';
+
+const USE_FASTAPI_INVOICES = import.meta.env.MODE !== 'test'
+  && import.meta.env.VITE_USE_FASTAPI_INVOICES === 'true';
+
+async function loadInvoices(auth, fallback) {
+  if (!USE_FASTAPI_INVOICES) return fallback;
+  const vendorCode = auth?.authType === 'supplier' ? auth.supplierLoginVcode : undefined;
+  return invoiceApi.listAll(vendorCode ? { vendor_code: vendorCode } : {});
+}
 
 /** Pull the whole dataset from the API and push it into the store + runtime. */
-export const loadBootstrap = () => async (dispatch) => {
-  const b = await api.get('/workspace');
-  setRuntimeData({ invoices: b.invoices, syncLog: b.syncLog });
+export const loadBootstrap = (auth) => async (dispatch) => {
+  let b = { invoices: [], syncLog: [], tickets: [], ticketSeq: 0, tables: {}, settings: {} };
+  if (!AUTH_BYPASS) b = await api.get('/workspace');
+  const invoices = await loadInvoices(auth, b.invoices);
+  setRuntimeData({ invoices, syncLog: b.syncLog });
   dispatch(bumpData()); // memoised invoice selectors must re-read the new data
   dispatch(hydrateTickets({ items: b.tickets, seq: b.ticketSeq }));
   dispatch(hydrateTables(b.tables));
@@ -26,7 +39,7 @@ export const loginThunk = (form, opts = {}) => async (dispatch) => {
   // the app the moment auth flips, and pages must not render (and cache) an empty
   // dataset while the bootstrap request is still in flight.
   try {
-    await dispatch(loadBootstrap());
+    await dispatch(loadBootstrap(auth));
   } catch (err) {
     api.clearToken();
     throw err;
@@ -40,7 +53,7 @@ export const restoreSession = () => async (dispatch) => {
   try {
     const { auth } = await api.get('/auth/me');
     dispatch(setAuthFromServer(auth));
-    await dispatch(loadBootstrap());
+    await dispatch(loadBootstrap(auth));
     return true;
   } catch {
     api.clearToken();

@@ -136,7 +136,10 @@ export default function LoginPage() {
         <BrandPanel />
 
         <section className="lgn-hero-right">
-          <AuthCard onNotify={notify}>
+          <AuthCard
+            onNotify={notify}
+            subtitle={tab === 'supplier' ? 'Use your vendor code to continue.' : 'Sign in to continue.'}
+          >
             <AccountTypeSelector value={tab} onChange={switchTab} />
             {alerts}
 
@@ -169,7 +172,7 @@ export default function LoginPage() {
                   error={fieldErr.vcode}
                   type="text"
                   autoComplete="username"
-                  placeholder="Enter your vendor code"
+                  placeholder="Enter vendor code"
                   value={vcode}
                   onChange={(e) => setVcode(e.target.value)}
                 />

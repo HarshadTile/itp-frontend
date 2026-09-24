@@ -46,8 +46,8 @@ export default function SupplierInvoiceDetailModal({ ctx }) {
         <>
           <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Other Invoices on PO {inv.po}</label>
           <div style={{ marginTop: 8 }}>
-            {siblingInvoices.map((s) => (
-              <div className="validation-row" key={s.no}><span>{s.no}</span><Badge tone={combinedStatusFor(s).tone}>{combinedStatusFor(s).label}</Badge></div>
+            {siblingInvoices.map((s, rowIndex) => (
+              <div className="validation-row" key={`${s.no}-${rowIndex}`}><span>{s.no}</span><Badge tone={combinedStatusFor(s).tone}>{combinedStatusFor(s).label}</Badge></div>
             ))}
           </div>
         </>

@@ -4,8 +4,6 @@
 // the two leaf data modules (which have no further imports), so this file loads
 // cleanly under plain Node ESM — the client's businessLogic.js uses
 // extension-less imports that only Vite resolves.
-import { VENDOR_CODE_MAP } from '../src/data/constants.js';
-import { INVOICE_DATA } from '../src/data/invoices.js';
 import { query } from './db.js';
 
 function hashIdx(str, mod) {
@@ -34,13 +32,28 @@ export function panFor(supplier) {
 export async function supplierForCode(code) {
   const wanted = String(code).trim().toUpperCase();
   const rows = await query('SELECT vcode, vendor FROM invoices WHERE UPPER(vcode)=? LIMIT 1', [wanted]);
-  if (rows.length) return { vcode: rows[0].vcode, vendor: rows[0].vendor };
-  const hit = VENDOR_CODE_MAP.rows.find((r) => r[0].toUpperCase() === wanted);
-  return hit ? { vcode: hit[0], vendor: hit[1] } : null;
+  if (rows.length) return { vcode: rows[0].vcode, vendor: rows[0].vendor, pan: null };
+
+  // Supplier identity is owned by the FastAPI invoice service when the local
+  // Express workspace database has no imported invoice rows.
+  try {
+    const baseUrl = process.env.INVOICE_API_URL || 'http://127.0.0.1:8000/api/v1';
+    const url = new URL(`${baseUrl}/invoices`);
+    url.searchParams.set('vendor_code', wanted);
+    url.searchParams.set('page', '1');
+    url.searchParams.set('page_size', '1');
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const invoice = payload.items?.[0];
+    if (!invoice?.supplier?.vendor_code) return null;
+    return {
+      vcode: invoice.supplier.vendor_code,
+      vendor: invoice.supplier.supplier_name,
+      pan: invoice.supplier.pan,
+    };
+  } catch {
+    return null;
+  }
 }
 
-export function vendorCodesFor(supplier) {
-  const fromMap = VENDOR_CODE_MAP.rows.filter((r) => r[1] === supplier).map((r) => r[0]);
-  if (fromMap.length) return fromMap;
-  return [...new Set(INVOICE_DATA.filter((i) => i.vendor === supplier).map((i) => i.vcode))];
-}

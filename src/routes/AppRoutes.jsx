@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AUTH_BYPASS } from '../features/auth/authSlice';
 import {
   RequireInternal,
   RequireSupplier,
@@ -27,8 +28,8 @@ import SupplierTicketsPage from '../pages/supplier/SupplierTicketsPage.jsx';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<RedirectIfLoggedIn><LoginPage /></RedirectIfLoggedIn>} />
+      <Route path="/" element={<Navigate to={AUTH_BYPASS ? '/app/invoices' : '/login'} replace />} />
+      <Route path="/login" element={AUTH_BYPASS ? <Navigate to="/app/invoices" replace /> : <RedirectIfLoggedIn><LoginPage /></RedirectIfLoggedIn>} />
 
       {/* Internal / HQ side */}
       <Route element={<RequireInternal />}>
@@ -72,7 +73,7 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to={AUTH_BYPASS ? '/app/invoices' : '/login'} replace />} />
     </Routes>
   );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { panFor, supplierEmailFor } from '../../utils/businessLogic';
 import { askLogout } from '../../features/auth/logoutPrompt';
 import { User, LogOut } from '../common/icons.jsx';
 
@@ -20,8 +19,8 @@ export default function UserMenu() {
 
   const isSupplier = authType === 'supplier';
   const name = isSupplier ? supplierQuery : currentUser.name;
-  const email = isSupplier ? supplierEmailFor(supplierQuery) : currentUser.email;
-  const initials = isSupplier ? panFor(supplierQuery).slice(0, 2) : currentUser.initials;
+  const email = isSupplier ? '' : currentUser.email;
+  const initials = isSupplier ? null : currentUser.initials;
   const detail = isSupplier
     ? `Supplier · ${supplierLoginVcode}`
     : `${role} · ${channelScope === 'all' ? 'All Channels' : 'Internal Team'}`;
@@ -43,16 +42,16 @@ export default function UserMenu() {
     <div className="user-menu-wrap" ref={wrapRef}>
       <button type="button" className="avatar" aria-label={`Account menu for ${name}`}
         aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {initials}
+        {isSupplier ? <User size={18} /> : initials}
       </button>
 
       {open && (
         <div className="user-menu" role="menu">
           <div className="user-menu-head">
-            <div className="avatar user-menu-avatar" aria-hidden="true">{initials}</div>
+            {!isSupplier && <div className="avatar user-menu-avatar" aria-hidden="true">{initials}</div>}
             <div className="user-menu-who">
               <b>{name}</b>
-              <span className="user-menu-email">{email}</span>
+              {email && <span className="user-menu-email">{email}</span>}
               <span className="chip gray">{detail}</span>
             </div>
           </div>

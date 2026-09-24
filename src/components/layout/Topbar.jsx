@@ -1,11 +1,12 @@
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { CHANNELS } from '../../data/constants';
-import { suppliersFromRuntime } from '../../data/runtime';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { CHANNELS, CHANNEL_LABEL } from '../../data/constants';
+import { runtime, suppliersFromRuntime } from '../../data/runtime';
 import { vendorCodesFor } from '../../utils/businessLogic';
 import { switchIdentity } from '../../features/auth/authSlice';
 import { pushToast, resetFiltersOnIdentitySwitch, toggleSidebar } from '../../features/ui/uiSlice';
-import { Search, Bell, HelpCircle, ChevronDown, Menu } from '../common/icons.jsx';
+import { Bell, HelpCircle, ChevronDown, Menu } from '../common/icons.jsx';
 import UserMenu from './UserMenu.jsx';
 
 const SETTINGS_LABEL = {
@@ -31,28 +32,214 @@ function crumbFor(pathname, params) {
   return '';
 }
 
+/* ── Compact vendor dropdown for topbar ─────────────────────────── */
+function TopbarVendorDropdown({ searchParams, onUpdate }) {
+  const [open, setOpen]   = useState(false);
+  const [typeQ, setTypeQ] = useState('');
+  const wrapRef           = useRef(null);
+  const currentVcode      = searchParams.get('vcode') || '';
+
+  const vendors = useMemo(() => {
+    const seen = new Map();
+    runtime.invoices.forEach((inv) => {
+      if (!seen.has(inv.vendor)) seen.set(inv.vendor, inv.vcode);
+    });
+    return [...seen.entries()]
+      .map(([vendor, vcode]) => ({ vendor, vcode }))
+      .sort((a, b) => a.vendor.localeCompare(b.vendor));
+  }, []);
+
+  const filtered = typeQ.trim()
+    ? vendors.filter((v) =>
+        v.vendor.toLowerCase().includes(typeQ.toLowerCase()) ||
+        v.vcode.toLowerCase().includes(typeQ.toLowerCase()),
+      )
+    : vendors;
+
+  const selectedLabel = currentVcode
+    ? vendors.find((v) => v.vcode === currentVcode)?.vendor ?? currentVcode
+    : null;
+
+  function pick(vcode) { onUpdate('vcode', vcode); setOpen(false); setTypeQ(''); }
+
+  // Close on click outside
+  useEffect(() => {
+    function handler(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          height: 38, maxWidth: 210, padding: '0 10px 0 12px',
+          background: currentVcode ? '#EFF6FF' : '#F0F1F4',
+          border: `1px solid ${currentVcode ? '#3B82F6' : 'var(--border)'}`,
+          borderRadius: 9, fontSize: 12.5, fontWeight: 500,
+          color: currentVcode ? '#1D4ED8' : 'var(--text-body)',
+          cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden',
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="Filter by vendor"
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+          {selectedLabel ?? 'All Vendors'}
+        </span>
+        {currentVcode
+          ? <span onClick={(e) => { e.stopPropagation(); pick(''); }} style={{ opacity: .7, fontSize: 15, lineHeight: 1, flexShrink: 0 }} aria-label="Clear vendor filter">×</span>
+          : <ChevronDown size={13} style={{ flexShrink: 0, opacity: .6 }} />
+        }
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60,
+          width: 280, background: '#fff',
+          border: '1px solid var(--border)', borderRadius: 10,
+          boxShadow: '0 12px 34px rgba(23,24,26,.13)', overflow: 'hidden',
+        }}>
+          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)' }}>
+            <input autoFocus className="search-box" style={{ width: '100%', height: 34, fontSize: 12.5 }}
+              placeholder="Search vendor name or code…" value={typeQ} onChange={(e) => setTypeQ(e.target.value)} />
+          </div>
+          <div style={{ maxHeight: 260, overflowY: 'auto' }} role="listbox">
+            <button type="button" role="option" aria-selected={!currentVcode} onClick={() => pick('')}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', border: 'none',
+                background: !currentVcode ? 'var(--brand-tint)' : 'none', color: !currentVcode ? 'var(--brand-dark)' : 'var(--text-body)',
+                fontWeight: !currentVcode ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
+              All Vendors
+            </button>
+            {filtered.length === 0 && <p style={{ padding: '10px 14px', fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>No vendors match "{typeQ}"</p>}
+            {filtered.map((v) => (
+              <button key={v.vcode} type="button" role="option" aria-selected={currentVcode === v.vcode} onClick={() => pick(v.vcode)}
+                style={{ display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left', padding: '8px 14px', border: 'none',
+                  background: currentVcode === v.vcode ? 'var(--brand-tint)' : 'none', cursor: 'pointer' }}
+                onMouseEnter={(e) => { if (currentVcode !== v.vcode) e.currentTarget.style.background = 'var(--gray-bg)'; }}
+                onMouseLeave={(e) => { if (currentVcode !== v.vcode) e.currentTarget.style.background = 'none'; }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: currentVcode === v.vcode ? 'var(--brand-dark)' : 'var(--text-body)' }}>{v.vendor}</span>
+                <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: 1 }}>{v.vcode}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Compact channel dropdown for topbar (tier-scoped) ─────────── */
+function TopbarChannelDropdown({ searchParams, onUpdate, channelScope }) {
+  const [open, setOpen]   = useState(false);
+  const [typeQ, setTypeQ] = useState('');
+  const wrapRef           = useRef(null);
+  const currentKey        = searchParams.get('channel') || '';
+
+  // Only shown for HQ, so all channels are allowed
+  const allowedChannels = CHANNELS;
+
+  const selectedLabel = currentKey ? allowedChannels.find((c) => c.key === currentKey)?.label ?? currentKey : null;
+
+  const filtered = typeQ.trim()
+    ? allowedChannels.filter((c) => c.label.toLowerCase().includes(typeQ.toLowerCase()))
+    : allowedChannels;
+
+  function pick(key) { onUpdate('channel', key); setOpen(false); setTypeQ(''); }
+
+  // Close on click outside
+  useEffect(() => {
+    function handler(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          height: 38, maxWidth: 180, padding: '0 10px 0 12px',
+          background: currentKey ? '#EFF6FF' : '#F0F1F4',
+          border: `1px solid ${currentKey ? '#3B82F6' : 'var(--border)'}`,
+          borderRadius: 9, fontSize: 12.5, fontWeight: 500,
+          color: currentKey ? '#1D4ED8' : 'var(--text-body)',
+          cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden',
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="Filter by processing channel"
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+          {selectedLabel ?? 'All Channels'}
+        </span>
+        {currentKey
+          ? <span onClick={(e) => { e.stopPropagation(); pick(''); }} style={{ opacity: .7, fontSize: 15, lineHeight: 1, flexShrink: 0 }} aria-label="Clear channel filter">×</span>
+          : <ChevronDown size={13} style={{ flexShrink: 0, opacity: .6 }} />
+        }
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60,
+          width: 220, background: '#fff',
+          border: '1px solid var(--border)', borderRadius: 10,
+          boxShadow: '0 12px 34px rgba(23,24,26,.13)', overflow: 'hidden',
+        }}>
+          {allowedChannels.length > 5 && (
+            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)' }}>
+              <input autoFocus className="search-box" style={{ width: '100%', height: 34, fontSize: 12.5 }}
+                placeholder="Search channel…" value={typeQ} onChange={(e) => setTypeQ(e.target.value)} />
+            </div>
+          )}
+          <div style={{ maxHeight: 260, overflowY: 'auto' }} role="listbox">
+            <button type="button" role="option" aria-selected={!currentKey} onClick={() => pick('')}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', border: 'none',
+                background: !currentKey ? 'var(--brand-tint)' : 'none', color: !currentKey ? 'var(--brand-dark)' : 'var(--text-body)',
+                fontWeight: !currentKey ? 700 : 500, fontSize: 13, cursor: 'pointer' }}>
+              All Channels
+            </button>
+            {filtered.map((c) => (
+              <button key={c.key} type="button" role="option" aria-selected={currentKey === c.key} onClick={() => pick(c.key)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', border: 'none', fontSize: 13,
+                  background: currentKey === c.key ? 'var(--brand-tint)' : 'none',
+                  color: currentKey === c.key ? 'var(--brand-dark)' : 'var(--text-body)',
+                  fontWeight: currentKey === c.key ? 700 : 500, cursor: 'pointer' }}
+                onMouseEnter={(e) => { if (currentKey !== c.key) e.currentTarget.style.background = 'var(--gray-bg)'; }}
+                onMouseLeave={(e) => { if (currentKey !== c.key) e.currentTarget.style.background = 'none'; }}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Topbar ────────────────────────────────────────────────────────── */
 export default function Topbar() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const location = useLocation();
-  const params = useParams();
-  const { authType, channelScope, supplierLoginVcode } = useSelector((s) => s.auth);
+  const params   = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { authType, channelScope } = useSelector((s) => s.auth);
 
-  const identityValue = authType === 'supplier' ? `supplier:${supplierLoginVcode}` : `internal:${channelScope}`;
   const crumb = crumbFor(location.pathname, params);
+  const isHQ = channelScope === 'all';
+  const isChannelLocked = !isHQ;
+  const channelLabel = CHANNEL_LABEL[channelScope] || channelScope;
 
-  function handleIdentityChange(e) {
-    const val = e.target.value;
-    dispatch(switchIdentity(val));
-    dispatch(resetFiltersOnIdentitySwitch());
-    const [kind, v] = val.split(':');
-    if (kind === 'supplier') {
-      navigate('/supplier/home');
-      dispatch(pushToast(`Now viewing as supplier, vendor code ${v} only.`));
-    } else {
-      navigate('/app/invoices');
-      dispatch(pushToast(v === 'all' ? 'Now viewing all channels.' : 'Now viewing Internal Team (Msetu/SRM + PO Portal + MFOX).'));
-    }
+  /** Update a URL param in place (keeps user on current page, e.g. Dashboard or Search) */
+  function updateSearchParam(key, value) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value); else next.delete(key);
+    setSearchParams(next, { replace: true });
   }
 
   return (
@@ -64,39 +251,29 @@ export default function Topbar() {
       <div className="crumb"><b>{crumb}</b></div>
 
       <div className="topbar-right">
-        <div className="topbar-search">
-          <Search size={16} aria-hidden="true" />
-          <input
-            className="search-box"
-            placeholder="Search invoice, PO, vendor…"
-            aria-label="Search invoices, POs, vendor codes"
-            onFocus={() => navigate(authType === 'supplier' ? '/supplier/home' : '/app/search')}
-            readOnly
-          />
-        </div>
-
-        <div className="workspace-select">
-          <select
-            className="role-select"
-            value={identityValue}
-            onChange={handleIdentityChange}
-            aria-label="Switch workspace"
-            title="Switch view: internal team / portal, or supplier vendor code"
-          >
-            <optgroup label="Internal Team">
-              <option value="internal:all">All Channels (HQ)</option>
-              <option value="internal:internalTeam">Internal Team</option>
-            </optgroup>
-            {suppliersFromRuntime().map((s) => (
-              <optgroup key={s} label={`Supplier: ${s}`}>
-                {vendorCodesFor(s).map((code) => (
-                  <option key={code} value={`supplier:${code}`}>{s.split(' ')[0]} + {code}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <ChevronDown size={14} aria-hidden="true" />
-        </div>
+        {/* Channel + Vendor search dropdowns — shown for all internal users on all pages */}
+        {authType === 'internal' && (
+          <>
+            {isChannelLocked ? (
+              <div
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  height: 38, padding: '0 12px',
+                  background: '#F0F1F4',
+                  border: '1px solid var(--border)',
+                  borderRadius: 9, fontSize: 12.5, fontWeight: 600,
+                  color: 'var(--text-body)', whiteSpace: 'nowrap',
+                }}
+                title="Your scope is locked to this channel"
+              >
+                {channelLabel}
+              </div>
+            ) : (
+              <TopbarChannelDropdown searchParams={searchParams} onUpdate={updateSearchParam} channelScope={channelScope} />
+            )}
+            <TopbarVendorDropdown searchParams={searchParams} onUpdate={updateSearchParam} />
+          </>
+        )}
 
         <button type="button" className="icon-btn" aria-label="Notifications"
           onClick={() => dispatch(pushToast('No new notifications.'))}>

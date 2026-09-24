@@ -1,15 +1,16 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { panFor, vendorCodesFor, supplierEmailFor, synthPhone } from '../utils/businessLogic';
+import { vendorCodesFor } from '../utils/businessLogic';
+import { runtime } from '../data/runtime';
 import { toggleTwoFactor } from '../features/settings/settingsSlice';
 import { pushToast } from '../features/ui/uiSlice';
 
 export default function ProfilePage() {
-  const { authType, currentUser, supplierQuery, supplierLoginVcode, channelScope, role } = useSelector((s) => s.auth);
+  const { authType, currentUser, supplierQuery, supplierPAN, supplierLoginVcode, channelScope, role } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
   const twoFactorOn = useSelector((s) => s.settings.twoFactorOn);
 
   if (authType === 'supplier') {
-    const pan = panFor(supplierQuery);
+    const pan = runtime.invoices.find((invoice) => invoice.vcode === supplierLoginVcode)?.pan || supplierPAN || '-';
     const codes = vendorCodesFor(supplierQuery);
     return (
       <>
@@ -26,17 +27,11 @@ export default function ProfilePage() {
                 <span className="chip gray mono">PAN {pan}</span>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)', fontSize: 12.5 }}>
-              <div className="avatar" style={{ width: 40, height: 40, fontSize: 13 }}>{pan.slice(0, 2)}</div>
-              <span>Vendor login profile</span>
-            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 12, marginBottom: 20 }}>
             <ProfileInfo label="Supplier Name" value={supplierQuery} />
             <ProfileInfo label="PAN" value={pan} mono />
-            <ProfileInfo label="Contact Email" value={supplierEmailFor(supplierQuery)} />
-            <ProfileInfo label="Contact Phone" value={synthPhone(supplierQuery)} />
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>

@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
-import { selectPerm } from '../features/auth/authSlice';
+import { AUTH_BYPASS, selectPerm } from '../features/auth/authSlice';
 
 /** Gate for the internal (HQ / Internal Team) side of the app. */
 export function RequireInternal() {
@@ -14,6 +14,7 @@ export function RequireInternal() {
 export function RequireSupplier() {
   const { loggedIn, authType } = useSelector((s) => s.auth);
   if (!loggedIn) return <Navigate to="/login" replace />;
+  if (AUTH_BYPASS) return <Outlet />;
   if (authType !== 'supplier') return <Navigate to="/app/invoices" replace />;
   return <Outlet />;
 }

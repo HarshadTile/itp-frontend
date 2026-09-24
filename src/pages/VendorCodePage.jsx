@@ -130,8 +130,8 @@ function VendorCodeHistory({ code, invoices }) {
         </div>
       </div>
       <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', display: 'block', marginBottom: 8 }}>Invoice History : {code}</label>
-      {invoices.length ? invoices.map((inv) => (
-        <div className="card" style={{ marginBottom: 12 }} key={inv.no}>
+      {invoices.length ? invoices.map((inv, rowIndex) => (
+        <div className="card" style={{ marginBottom: 12 }} key={`${inv.no}-${rowIndex}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <button type="button" className="link-hero" style={{ fontWeight: 700 }} onClick={() => dispatch(openModal({ kind: 'invoiceDetail', ctx: { no: inv.no } }))}>{inv.no}</button>
             <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{CHANNEL_LABEL[inv.channel]} · PO {inv.po}</span>

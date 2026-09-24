@@ -29,19 +29,16 @@ npm run test:server  # server test suite (local MySQL, separate `mahindra_i2p_te
 npm run lint         # oxlint
 ```
 
-### Demo logins (verified against the database)
+### Authentication and data provisioning
 
-- **Internal** — `admin` / `admin123` (Administrator, admin@company.com; either portal scope),
-  `ravi` / `ravi123` (Ravi Kulkarni, Admin) or `priya` / `priya123`
-  (MDE Invoice Team; **Internal Team** scope only — the All Channels scope is
-  reserved for Admin accounts and is refused by the server for anyone else).
-  You can sign in with either the **username** or the account's **e-mail**
-  (e.g. `admin` or `admin@company.com`). The app then shows what you signed
-  in with: `admin` shows "admin", the e-mail shows "Administrator" (the Profile
-  page always lists the full name).
-- **Supplier** — enter a vendor code that exists in the data (e.g. `DIT00388AC`,
-  `BSC00021`). There is no password (OTP is not implemented); an unknown code is
-  rejected, and the supplier is looked up from the code server-side.
+The seed command creates the schema and clears application tables. It does not
+insert demo invoices, tickets, or settings. For local development only, it
+creates one temporary administrator account: `admin` / `admin@123`. This
+account can select either All Channels or Internal Team. Provision real
+internal users and supplier/vendor records through your deployment or data
+import process before production use. Supplier access has no password in this
+prototype; the vendor code must already exist in FastAPI and is resolved
+server-side.
 
 ## Database
 
