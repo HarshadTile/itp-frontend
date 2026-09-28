@@ -29,6 +29,9 @@ export default function LoginPage() {
   const [channelScope, setChannelScope] = useState('all');
   const [empId, setEmpId] = useState('');
   const [vcode, setVcode] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [password, setPassword] = useState('');
 
   const busy = status === 'busy';
@@ -73,18 +76,17 @@ export default function LoginPage() {
     runLogin({ mode: 'internal', username: empId.trim(), password, channelScope }, '/app/invoices');
   }
 
-  function submitSupplier(e) {
+
+  async function submitSupplier(e) {
     e.preventDefault();
     const fe = {};
     if (!vcode.trim()) fe.vcode = 'Enter your vendor code.';
     setFieldErr(fe);
     if (Object.keys(fe).length) return;
-    const code = vcode.trim();
-    runLogin(
-      { mode: 'supplier', vcode: code, company: supplierForVendorCode(code) },
-      '/supplier/home',
-    );
+
+    runLogin({ mode: 'supplier', vcode: vcode.trim(), company: supplierForVendorCode(vcode.trim()) }, '/supplier/home');
   }
+
 
   const notify = (msg) => dispatch(pushToast(msg));
 
@@ -163,7 +165,6 @@ export default function LoginPage() {
               </form>
             ) : (
               <form className="lgn-form" onSubmit={submitSupplier} noValidate>
-                {/* keeps the card the same height as the Internal Team tab */}
                 <div className="lgn-form-spacer supplier-code-only" aria-hidden="true" />
                 <FormField
                   id="lgn-vcode"

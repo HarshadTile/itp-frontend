@@ -46,7 +46,7 @@ export const selectTable = (state, key) => state.tables.byKey[key] || EMPTY_ROWS
 /* ---- write-through thunks ---- */
 
 // Persist whatever rows the given key now holds in the store.
-const persist = (key) => (_dispatch, getState) => api.put(`/tables/${key}`, {
+const persist = (key) => (_dispatch, getState) => api.put(`/v1/tables/${key}`, {
   rows: getState().tables.byKey[key] || [],
 });
 

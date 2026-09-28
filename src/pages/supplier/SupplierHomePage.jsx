@@ -12,7 +12,7 @@ import StatCard from '../../components/common/StatCard.jsx';
 export default function SupplierHomePage() {
   const dispatch = useDispatch();
   const invoices = useSelector(selectScopedInvoices);
-  const { supplierLoginVcode: code, supplierQuery: supplier, supplierPAN } = useSelector((s) => s.auth);
+  const { vcode: code, company: supplier, pan: supplierPAN } = useSelector((s) => s.auth);
   const activeTab = useSelector((s) => s.ui.supplierHomeTab) || 'current';
   const [activeKpi, setActiveKpi] = useState('total');
   const [searchParams] = useSearchParams();

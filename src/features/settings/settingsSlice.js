@@ -43,10 +43,10 @@ export default settingsSlice.reducer;
 /* ---- write-through thunks ---- */
 export const togglePermission = (payload) => async (dispatch, getState) => {
   dispatch(togglePermissionLocal(payload));
-  await api.put('/settings', { roleMatrix: getState().settings.roleMatrix });
+  await api.put('/v1/settings', { roleMatrix: getState().settings.roleMatrix });
 };
 
 export const toggleTwoFactor = () => async (dispatch, getState) => {
   dispatch(toggleTwoFactorLocal());
-  await api.put('/settings', { twoFactorOn: getState().settings.twoFactorOn });
+  await api.put('/v1/settings', { twoFactorOn: getState().settings.twoFactorOn });
 };

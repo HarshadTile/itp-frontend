@@ -109,7 +109,7 @@ export default ticketsSlice.reducer;
 /* ---- write-through thunks (public API used by components) ---- */
 
 export const submitTicket = (payload) => async (dispatch) => {
-  const { ticket, seq } = await api.post('/tickets', payload);
+  const { ticket, seq } = await api.post('/v1/tickets', payload);
   dispatch(prependTicket({ ticket, seq }));
   return ticket;
 };
@@ -121,7 +121,7 @@ function reconcile(dispatch, updated) {
 
 export const postComment = (payload) => async (dispatch) => {
   dispatch(postCommentLocal(payload));
-  const updated = await api.post(`/tickets/${payload.id}/comments`, {
+  const updated = await api.post(`/v1/tickets/${payload.id}/comments`, {
     author: payload.author, role: payload.role, text: payload.text, date: today(),
   });
   reconcile(dispatch, updated);

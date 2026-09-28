@@ -13,14 +13,14 @@ const USE_FASTAPI_INVOICES = import.meta.env.MODE !== 'test'
 
 async function loadInvoices(auth, fallback) {
   if (!USE_FASTAPI_INVOICES) return fallback;
-  const vendorCode = auth?.authType === 'supplier' ? auth.supplierLoginVcode : undefined;
+  const vendorCode = auth?.authType === 'supplier' ? auth.vcode : undefined;
   return invoiceApi.listAll(vendorCode ? { vendor_code: vendorCode } : {});
 }
 
 /** Pull the whole dataset from the API and push it into the store + runtime. */
 export const loadBootstrap = (auth) => async (dispatch) => {
   let b = { invoices: [], syncLog: [], tickets: [], ticketSeq: 0, tables: {}, settings: {} };
-  if (!AUTH_BYPASS) b = await api.get('/workspace');
+  if (!AUTH_BYPASS) b = await api.get('/v1/workspace');
   const invoices = await loadInvoices(auth, b.invoices);
   setRuntimeData({ invoices, syncLog: b.syncLog });
   dispatch(bumpData()); // memoised invoice selectors must re-read the new data
@@ -33,7 +33,16 @@ export const loadBootstrap = (auth) => async (dispatch) => {
 /** Sign in, store the token, hydrate. Throws on bad credentials.
  *  `opts.remember === false` keeps the session in sessionStorage only. */
 export const loginThunk = (form, opts = {}) => async (dispatch) => {
-  const { token, auth } = await api.post('/auth/login', form);
+  let token, auth;
+  if (form.mode === 'supplier') {
+    const res = await api.post('/v1/auth/supplier/login', form);
+    token = res.token;
+    auth = res.auth;
+  } else {
+    const res = await api.post('/v1/auth/login', form);
+    token = res.token;
+    auth = res.auth;
+  }
   api.setToken(token, { persist: opts.remember !== false });
   // Load the data BEFORE flipping to "logged in": the route guards redirect into
   // the app the moment auth flips, and pages must not render (and cache) an empty
@@ -51,7 +60,7 @@ export const loginThunk = (form, opts = {}) => async (dispatch) => {
 export const restoreSession = () => async (dispatch) => {
   if (!api.hasToken()) return false;
   try {
-    const { auth } = await api.get('/auth/me');
+    const { auth } = await api.get('/v1/auth/me');
     dispatch(setAuthFromServer(auth));
     await dispatch(loadBootstrap(auth));
     return true;
@@ -64,7 +73,7 @@ export const restoreSession = () => async (dispatch) => {
 /** Invalidate the session server-side, then clear local auth. */
 export const logoutThunk = () => async (dispatch) => {
   try {
-    await api.post('/auth/logout');
+    await api.post('/v1/auth/logout');
   } catch {
     /* token already gone / server down — clear locally anyway */
   }

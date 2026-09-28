@@ -55,6 +55,11 @@ const authSlice = createSlice({
     // Apply the auth object returned by POST /api/login or GET /api/me.
     setAuthFromServer(state, action) {
       Object.assign(state, action.payload, { loggedIn: true });
+      if (state.authType === 'supplier') {
+        state.supplierLoginVcode = state.vcode;
+        state.supplierQuery = state.company;
+        state.supplierPAN = state.pan;
+      }
     },
   },
 });
